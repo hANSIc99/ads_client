@@ -2,13 +2,13 @@ use ads_client::{Client, AdsTimeout, Result};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let ads = Client::new("5.80.201.232.1.1", 851, AdsTimeout::DefaultTimeout).await?;
+    let ads_client = Client::new("5.80.201.232.1.1", 851, AdsTimeout::DefaultTimeout).await?;
 
     // Get symbol handle
     let mut hdl : [u8; 4] = [0; 4];
     let symbol = b"MAIN.n_cnt_a";
 
-    if let Err(err) = ads.read_write(0xF003, 0, &mut hdl, symbol).await{
+    if let Err(err) = ads_client.read_write(0xF003, 0, &mut hdl, symbol).await{
         println!("Error: {}", err.to_string());
     }
 
@@ -20,7 +20,7 @@ async fn main() -> Result<()> {
         let mut plc_n_cnt_a : [u8; 2] = [0; 2];
         
 
-        let read_hdl = ads.read(0xF005, n_hdl, &mut plc_n_cnt_a).await;
+        let read_hdl = ads_client.read(0xF005, n_hdl, &mut plc_n_cnt_a).await;
 
         match read_hdl {
             Ok(_bytes_read)     => {
