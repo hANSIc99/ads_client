@@ -4,9 +4,6 @@
 //!
 //! # Examples
 //! 
-//! ```rust
-//! assert!(1 == 2);
-//! ```
 //! The ADS client is used to work beside a TC1000 ADS Router
 //! which is part of every TwinCAT installation. The client requires at 
 //! least TwinCAT Version 3.1.4024.x
@@ -59,6 +56,10 @@ enum ProcessStateMachine{
     ReadPayload { len_payload: usize, invoke_id: u32, cmd: AdsCommand}
 }
 
+/// An ADS client to use in combination with the [TC1000 ADS router](https://www.beckhoff.com/en-en/products/automation/twincat/tc1xxx-twincat-3-base/tc1000.html).
+/// 
+/// The client opens a port on the local ADS router in order to submit ADS requests.
+/// Use the [Client::new] method to create an instance.
 pub struct Client {
     _dst_addr       : AmsNetId,
     _dst_port       : u16,
@@ -228,7 +229,22 @@ impl Client {
                 Ok(())
                 
     }
-
+    
+    /// Create a new instance of an ADS client.
+    /// 
+    /// - `addr` AmsNetId of the target system
+    /// - `port` ADS port number to communicate with
+    /// - `timeout` Value for ADS timeout value ([AdsTimeout::DefaultTimeout] corresponds to 5s)
+    /// 
+    /// # Example
+    /// ```rust
+    /// use ads_client::{Client, AdsTimeout, Result};
+    /// #[tokio::main]
+    /// async fn main() -> Result<()> {
+    ///     let ads_client =  Client::new("5.80.201.232.1.1", 851, AdsTimeout::DefaultTimeout).await?;
+    ///     Ok(())
+    /// }
+    /// ```
     pub async fn new(addr :&str, port : u16, timeout : AdsTimeout) -> Result<Self> {
         let state_flag : u16 = 4;
         let error_code : u32 = 0;

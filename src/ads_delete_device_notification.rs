@@ -28,7 +28,10 @@ impl Client {
         Client::eval_return_code(del_not_response.as_ref())?;
         Ok(())
     }
-
+    /// Submit an asynchronous [ADS Delete Device Notification](https://infosys.beckhoff.com/content/1033/tc3_ads_intro/115881995.html?id=6216061301016726131) request.
+    /// 
+    /// Checkout the extensive examples [notification](https://github.com/hANSIc99/ads_client/blob/main/examples/notification.rs) 
+    /// and [notification_async](https://github.com/hANSIc99/ads_client/blob/main/examples/notification_async.rs).
     pub async fn delete_device_notification(&self, handle: u32 ) -> Result<()>{
 
         // Prepare delete device notification request

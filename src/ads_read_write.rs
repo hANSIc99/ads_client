@@ -48,6 +48,29 @@ impl Client{
         Ok(rw_response[8..].len() as u32)
     }
 
+    /// Submit an asynchronous [ADS Read Write](https://infosys.beckhoff.com/content/1033/tc3_ads_intro/115884043.html?id=2085949217954035635) request.
+    /// 
+    /// 
+    /// # Example
+    ///
+    /// ```rust
+    /// use ads_client::{Client, AdsTimeout, Result};
+    /// #[tokio::main]
+    /// async fn main() -> Result<()> {
+    ///     let ads_client = Client::new("5.80.201.232.1.1", 851, AdsTimeout::DefaultTimeout).await?;
+    ///
+    ///     // Get symbol handle
+    ///     let mut hdl : [u8; 4] = [0; 4];
+    ///     let symbol = b"MAIN.n_cnt_a";
+    ///
+    ///     if let Err(err) = ads_client.read_write(0xF003, 0, &mut hdl, symbol).await{
+    ///         println!("Error: {}", err.to_string());
+    ///     }
+    ///     Ok(())
+    /// }
+    /// ```
+    /// Checkout the examples [read_symbol](https://github.com/hANSIc99/ads_client/blob/main/examples/read_symbol.rs) 
+    /// and [read_symbol_async](https://github.com/hANSIc99/ads_client/blob/main/examples/read_symbol_async.rs).
     pub async fn read_write(&self, idx_grp: u32, idx_offs: u32, read_data: &mut [u8], write_data: &[u8]) -> Result<u32>{
         
         // Prepare ReadWrite request

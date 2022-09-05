@@ -19,14 +19,27 @@ impl Client {
         }
     }
 
-    /// Submit an [ADS Read State](https://infosys.beckhoff.com/content/1033/tc3_ads_intro/115878923.html) request synchronously
+    /// Submit an asynchronous [ADS Read State](https://infosys.beckhoff.com/content/1033/tc3_ads_intro/115878923.html) request.
     /// 
     /// 
     /// # Example
-    /// Basic usage
+    ///
     /// ```rust
-    /// test
+    /// use ads_client::{Client, AdsTimeout, Result};
+    /// #[tokio::main]
+    /// async fn main() -> Result<()> {
+    ///
+    ///    let ads_client = Client::new("5.80.201.232.1.1", 10000, AdsTimeout::DefaultTimeout).await?;
+    ///
+    ///    match ads_client.read_state().await {
+    ///        Ok(state) => println!("State: {:?}", state),
+    ///        Err(err) => println!("Error: {}", err.to_string())
+    ///    }
+    ///    Ok(())
+    ///}
     /// ```
+    /// Checkout the examples [read_state](https://github.com/hANSIc99/ads_client/blob/main/examples/read_state.rs) 
+    /// and [read_state_async](https://github.com/hANSIc99/ads_client/blob/main/examples/read_state_async.rs).
     pub async fn read_state(&self) -> Result<AdsStateInfo> {
 
         // Prepare read state request

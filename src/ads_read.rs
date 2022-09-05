@@ -3,9 +3,6 @@ use bytes::{Bytes, BytesMut};
 use crate::{Client, Result, AdsCommand, CommandManager, HEADER_SIZE, LEN_READ_REQ};
 
 impl Client {
-    //! ADS Read command
-    //! 
-    //! Test test 123
 
     fn pre_read(&self, idx_grp: u32, idx_offs: u32, rd_len : usize, invoke_id: u32) -> Bytes {
 
@@ -49,7 +46,49 @@ impl Client {
 
         Ok(read_response[8..].len() as u32)
     }
-
+    /// Submit an asynchronous [ADS Read](https://infosys.beckhoff.com/content/1033/tc3_ads_intro/115876875.html?id=4960931295000833536) request.
+    /// 
+    /// 
+    /// # Example
+    ///
+    /// ```rust
+    ///use ads_client::{Client, AdsTimeout, Result};
+    ///
+    ///#[tokio::main]
+    ///async fn main() -> Result<()> {
+    ///    let ads_client = Client::new("5.80.201.232.1.1", 851, AdsTimeout::DefaultTimeout).await?;
+    ///
+    ///    // Get symbol handle
+    ///    let mut hdl : [u8; 4] = [0; 4];
+    ///    let symbol = b"MAIN.n_cnt_a";
+    ///
+    ///    if let Err(err) = ads_client.read_write(0xF003, 0, &mut hdl, symbol).await{
+    ///        println!("Error: {}", err.to_string());
+    ///    }
+    ///
+    ///    let n_hdl = u32::from_ne_bytes(hdl.try_into().unwrap());
+    ///
+    ///    if n_hdl != 0 {
+    ///        println!("Got handle!");
+    ///
+    ///        let mut plc_n_cnt_a : [u8; 2] = [0; 2];
+    ///        
+    ///
+    ///        let read_hdl = ads_client.read(0xF005, n_hdl, &mut plc_n_cnt_a).await;
+    ///
+    ///        match read_hdl {
+    ///            Ok(_bytes_read)     => {
+    ///                let n_cnt_a = u16::from_ne_bytes(plc_n_cnt_a.try_into().unwrap());
+    ///                println!("MAIN.n_cnt_a: {}", n_cnt_a);
+    ///            },
+    ///            Err(err) => println!("Read failed: {}", err.to_string())
+    ///        }
+    ///    }
+    ///    Ok(())
+    ///}
+    /// ```
+    /// Checkout the examples [read_symbol](https://github.com/hANSIc99/ads_client/blob/main/examples/read_symbol.rs) 
+    /// and [read_symbol_async](https://github.com/hANSIc99/ads_client/blob/main/examples/read_symbol_async.rs).
     pub async fn read(&self, idx_grp: u32, idx_offs: u32, data: &mut [u8]) -> Result<u32> {
         
         // Preprocessing

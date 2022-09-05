@@ -40,7 +40,10 @@ impl Client {
 
         Ok(())
     }
-
+    /// Submit an asynchronous [ADS Add Device Notification](https://infosys.beckhoff.com/content/1033/tc3_ads_intro/115880971.html?id=7388557527878561663) request.
+    /// 
+    /// Checkout the extensive examples [notification](https://github.com/hANSIc99/ads_client/blob/main/examples/notification.rs) 
+    /// and [notification_async](https://github.com/hANSIc99/ads_client/blob/main/examples/notification_async.rs).
     pub async fn add_device_notification(&self, idx_grp: u32, idx_offs: u32, attributes : &AdsNotificationAttrib, handle: &mut u32, callback : Notification, user_data: Option<&Arc<Mutex<BytesMut>>> ) -> Result<()>{
         
         // Prepare AddDeviceNotification request

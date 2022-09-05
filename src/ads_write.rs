@@ -29,7 +29,42 @@ impl Client {
         Client::eval_return_code(w_response.as_ref())?;
         Ok(())
     }
-
+    /// Submit an asynchronous [ADS Write](https://infosys.beckhoff.com/content/1033/tc3_ads_intro/115877899.html) request.
+    /// 
+    /// # Example
+    /// 
+    /// ```rust
+    ///use ads_client::{Client, AdsTimeout, Result};
+    ///
+    ///#[tokio::main]
+    ///async fn main() -> Result<()> {
+    ///    let ads_client = Client::new("5.80.201.232.1.1", 851, AdsTimeout::DefaultTimeout).await?;
+    ///
+    ///    // Get symbol handle
+    ///    let mut hdl : [u8; 4] = [0; 4];
+    ///    let symbol = b"MAIN.n_cnt_a";
+    ///
+    ///    if let Err(err) = ads_client.read_write(0xF003, 0, &mut hdl, symbol).await{
+    ///        println!("Error: {}", err.to_string());
+    ///    }
+    ///
+    ///    let n_hdl = u32::from_ne_bytes(hdl.try_into().unwrap());
+    ///
+    ///    if n_hdl != 0 {
+    ///        println!("Got handle!");
+    ///        
+    ///        let n_cnt_a : u16 = 1000;
+    ///        
+    ///        match ads_client.write(0xF005, n_hdl, &n_cnt_a.to_ne_bytes()).await{
+    ///            Ok(_)     => println!("Variable successfully written!"),
+    ///            Err(err) => println!("Error: {}", err.to_string())
+    ///        }
+    ///    }
+    ///    Ok(())
+    ///}
+    /// ```
+    /// Checkout the examples [write_symbol](https://github.com/hANSIc99/ads_client/blob/main/examples/write_symbol.rs) 
+    /// and [write_symbol_async](https://github.com/hANSIc99/ads_client/blob/main/examples/write_symbol_async.rs).
     pub async fn write(&self, idx_grp: u32, idx_offs: u32, data: &[u8]) -> Result<()> {
 
         // Prepare write request
