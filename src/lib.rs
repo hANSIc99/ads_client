@@ -1,12 +1,16 @@
 //! Welcome to the ADS client library.
 //! 
 //! This library can be used for communication over the [Beckhoff ADS](https://infosys.beckhoff.com/content/1033/tcinfosys3/11291871243.html) protocoll.
-//!
-//! # Examples
 //! 
-//! The ADS client is used to work beside a TC1000 ADS Router
-//! which is part of every TwinCAT installation. The client requires at 
-//! least TwinCAT Version 3.1.4024.x
+//! The ADS client is used to work beside a 
+//! [TC1000 ADS router](https://www.beckhoff.com/en-en/products/automation/twincat/tc1xxx-twincat-3-base/tc1000.html)
+//! which is part of every TwinCAT installation. The client requires at least TwinCAT Version 3.1.4024.x.
+//! 
+//! The methods are implemented asynchronous and non-blocking based on the [tokio](https://tokio.rs/) runtime.
+//! 
+//! # Usage
+//! 
+//! Checkout the [example section](https://github.com/hANSIc99/ads_client/tree/main/examples) in the repsoitory.
 
 #[macro_use]
 mod misc;

@@ -74,6 +74,17 @@ pub enum AdsTransMode {
     OnChange    = 4
 }
 
+/// Defines the notification attributes
+/// 
+/// Please also read the related documentation in the [InfoSys](https://infosys.beckhoff.com/content/1033/tc3_adsdll2/117553803.html).
+///
+/// - `cb_length` Size of the datatype to monitor.
+/// - `AdsTransMode` Specifies when to trigger a notification (see [AdsTransMode]).
+/// - `max_delay` Maximal acceptable delay \[100ns\].
+/// - `cycle_time` The interval at which the variable is checked \[100ns]\.
+/// 
+/// # Examples
+/// 
 pub struct AdsNotificationAttrib {
     pub cb_length   : u32,
     pub trans_mode  : AdsTransMode,
