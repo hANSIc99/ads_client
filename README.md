@@ -8,7 +8,7 @@ This ADS client implementation requires the presence of a [TC1000 ADS router](ht
 The ADS client requires the presence of the [tokio](https://tokio.rs/) runtime.
 The examples denoted with *_async* are called from a main function denoted with with tokios [#[tokio::main]](https://docs.rs/tokio/latest/tokio/attr.main.html ) macro which causes the provision of the runtime. The examples without *_async* provides the runtime manually.
 
-The provided examples rely on the related TwinCAT 3 project in TC3_Sample_Project. Also the AmsNetId of the target system must be adapted accordingly.
+The provided examples rely on the related TwinCAT 3 project in [TC3_Sample_Project](https://github.com/hANSIc99/ads_client/tree/main/TC3_Sample_Project). Also the AmsNetId of the target system must be adapted accordingly.
 
 Build and execute the examples with ```cargo run --example <example-name>```.
 
