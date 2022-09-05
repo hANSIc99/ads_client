@@ -2,7 +2,7 @@ use ads_client::{Client, AdsTimeout, Result};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let mut ads = Client::new("5.80.201.232.1.1", 851, AdsTimeout::DefaultTimeout).await?;
+    let ads = Client::new("5.80.201.232.1.1", 851, AdsTimeout::DefaultTimeout).await?;
 
     // Get symbol handle
     let mut hdl : [u8; 4] = [0; 4];
