@@ -27,6 +27,7 @@ use std::time::Instant;
 use std::io;
 use std::net::SocketAddr;
 use std::mem::{size_of_val};
+use std::sync::{Arc, Mutex, atomic::AtomicU16};
 
 use tokio::net::TcpStream;
 use tokio::runtime;
@@ -34,7 +35,6 @@ use tokio::io::{ReadHalf, WriteHalf};
 use tokio::io::{AsyncWriteExt, AsyncReadExt};
 
 use bytes::{Bytes, BytesMut};
-use std::sync::{Arc, Mutex, atomic::AtomicU16};
 
 use command_cleaner::CommandCleaner;
 use command_manager::CommandManager;

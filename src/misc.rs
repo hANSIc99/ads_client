@@ -51,8 +51,14 @@ mod misc {
 
 pub type AmsNetId = [u8; 6];
 pub type Result<T> = std::result::Result<T, Box<dyn error::Error>>;
+/// Type definition for notification callback
+/// 
+/// Arguments:
+/// 1. Handle
+/// 2. Timestamp
+/// 3. Value of monitored variable
+/// 4. User data
 pub type Notification = fn(u32, u64, Bytes, Option<Arc<Mutex<BytesMut>>>) -> (); // handle, timestamp and user data
-
 
 #[derive(Debug, Clone)]
 pub struct AdsError {
@@ -67,9 +73,14 @@ impl fmt::Display for AdsError {
     }
 }
 
+/// Determines the notification mechanism
+/// 
+/// - `ServerCycle` The notification is fired cyclically at intervals of [AdsNotificationAttrib::cycle_time].
+/// - `OnChange` The notification is fired only if the values has changed.
+/// 
+/// Please also read the related documentation in the [InfoSys](https://infosys.beckhoff.com/content/1031/tc3_adsdll2/117553803.html).
 #[derive(Copy, Clone)]
 pub enum AdsTransMode {
-    NoTrans     = 0,
     ServerCycle = 3,
     OnChange    = 4
 }
@@ -116,7 +127,10 @@ pub struct NotHandle {
     pub not_hdl   : u32,
     pub user_data : Option<Arc<Mutex<BytesMut>>>,
 }
-
+/// Specifies the maximum waiting time for an ADS response
+/// 
+/// `DefaultTimeout` Corresponds to 5 seconds
+/// `CustomTimeout` Value in seconds
 pub enum AdsTimeout {
     DefaultTimeout,
     CustomTimeout(u64)
