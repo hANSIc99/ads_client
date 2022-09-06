@@ -269,7 +269,6 @@ impl Client {
         let hdl_rt = runtime::Handle::current();
 
         let mut answer : [u8; 14] = [0; 14];
-        //let _stream = hdl_rt.block_on(Client::connect(&mut answer))?;
 
         let _stream = Client::connect(&mut answer).await?;
 
@@ -278,8 +277,8 @@ impl Client {
 
         // Split the stream into a read and write part
         //
-        // ReadHalf goes to process_response()
-        // Write hald goes to process_request
+        // Read-half goes to process_response()
+        // Write-half goes to Self
 
         let (read, write) = tokio::io::split(_stream);
 
@@ -369,7 +368,6 @@ impl Client {
     }
 
     fn register_not_handle(&self, not_hdl: u32, callback: Notification, user_data: Option<&Arc<Mutex<BytesMut>>>) {
-
         let a_not_handles = Arc::clone(&self.not_handles);
 
         let not_hdl = NotHandle {
@@ -385,7 +383,6 @@ impl Client {
     }
 
     fn c_init_ams_header(&self, invoke_id : u32, length_payload : Option<u32>, cmd : AdsCommand) -> [u8; HEADER_SIZE] {
-
         let length_payload = length_payload.unwrap_or(0);
         let length_header : u32 = AMS_HEADER_SIZE as u32 + length_payload;
 
@@ -403,8 +400,8 @@ impl Client {
     }
 
     fn eval_return_code(answer: &[u8]) -> Result<u32> {
-        //let ret_code = u32::from_ne_bytes(answer[HEADER_SIZE..HEADER_SIZE+4].try_into().unwrap());
         let ret_code = u32::from_ne_bytes(answer[0..4].try_into().unwrap());
+
         if ret_code != 0 {
             return Err(Box::new(AdsError{ n_error : ret_code }));
         } else {
@@ -418,7 +415,7 @@ impl Client {
 
     fn extract_cmd_tyte(answer: &[u8]) -> std::result::Result<AdsCommand, AdsError>{
         let n_cmd = u16::from_ne_bytes(answer[HEADER_SIZE-16..HEADER_SIZE-14].try_into().map_err(|_| AdsError{n_error : 1})?);
-        //println!("COMMAND: {:?}", n_cmd);
+        //println!("COMMAND: {:?}", n_cmd); // DEBUG
         match n_cmd {
             1 => return Ok(AdsCommand::ReadDeviceInfo),
             2 => return Ok(AdsCommand::Read),
@@ -436,7 +433,7 @@ impl Client {
     fn extract_length(answer: &[u8]) -> Result<usize>{
         // length in AMS-Header https://infosys.beckhoff.com/content/1031/tc3_ads_intro/115847307.html
         let tmp = u32::from_ne_bytes(answer[HEADER_SIZE-12..HEADER_SIZE-8].try_into()?);
-        // Err(Box::new(AdsError{n_error : 1212}))
+        // Err(Box::new(AdsError{n_error : 1212})) // DEBUG
         Ok(usize::try_from(tmp)?)
     }
 
@@ -451,7 +448,6 @@ impl Client {
     }
 
     async fn process_command(invoke_id: u32, cmd_register: Arc<Mutex<Vec<Handle>>>, data: Bytes){
-
         let mut _handles = cmd_register.lock().expect("Threading Error");
         let mut _iter = _handles.iter_mut();
 
@@ -469,11 +465,8 @@ impl Client {
         let max_stamp_header_offset = stream_size + size_of_val(&stamps);
         let mut stamp_header_offset : usize = 8; // Start Idx
 
-        for _ in 0..stamps { // Iterate over AdsStampHeader
-            // idx == 0 beim ersten Durchaulauf, der timestamp liegt hier im Bereich 0..8
-            // idx == 1 im zweiten Durchlauf, der timestamp liegt hier in 
-
-            // Return there is not enough data
+        for _ in 0..stamps { // Iterate over AdsStampHeader 
+            // Return if there is not enough data
             if (stamp_header_offset + LEN_STAMP_HEADER_MIN) > max_stamp_header_offset {
                 return;
             }
@@ -488,8 +481,7 @@ impl Client {
             // == 20 (after first call)
 
             for _ in 0..stamp_header.samples {
-
-                // Return there is not enough data
+                // Return if there is not enough data
                 if (stamp_header_offset + LEN_NOT_SAMPLE_MIN) > max_stamp_header_offset {
                     return;
                 }
