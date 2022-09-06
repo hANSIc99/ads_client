@@ -5,7 +5,7 @@ use crate::{AdsError, Client, Result, AdsCommand, CommandManager, AdsStateInfo};
 impl Client {
 
     fn post_read_state(rs_response : Bytes) -> Result<AdsStateInfo> {
-        
+
         if rs_response.len() != 8 {
             return Err(Box::new(AdsError{n_error : 0xE })); // Invalid length
         } else {
@@ -13,7 +13,7 @@ impl Client {
             Client::eval_return_code(&rs_response.slice(0..4))?;
 
             Ok(AdsStateInfo{
-                ads_state       : u16::from_ne_bytes(rs_response.slice(4..6)[..].try_into().unwrap()),
+                ads_state       : u16::from_ne_bytes(rs_response.slice(4..6)[..].try_into().unwrap()).try_into()?,
                 device_state    : u16::from_ne_bytes(rs_response.slice(6..8)[..].try_into().unwrap())
             })
         }

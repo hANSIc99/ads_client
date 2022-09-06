@@ -156,7 +156,7 @@ impl Client {
                         }
                         Ok(_) => {
                             let len_payload = Client::extract_length(&header_buf).map_err(|_| Box::new(AdsError{n_error : 1})).unwrap();
-                            let invoke_id   = Client::extract_invoke_id(&header_buf).map_err(|_| Box::new(AdsError{n_error : 1})).unwrap();
+                            let invoke_id   = Client::extract_invoke_id(&header_buf).map_err(|_| Box::new(AdsError{n_error : 1})).unwrap();   
                             let ads_cmd     = Client::extract_cmd_tyte(&header_buf).map_err(|_| Box::new(AdsError{n_error : 1})).unwrap();
                             // Create buffer of size payload
                             //println!("Payload: {:?}", len_payload);
@@ -413,21 +413,11 @@ impl Client {
         Ok(u32::from_ne_bytes(answer[HEADER_SIZE-4..HEADER_SIZE].try_into()?))
     }
 
-    fn extract_cmd_tyte(answer: &[u8]) -> std::result::Result<AdsCommand, AdsError>{
-        let n_cmd = u16::from_ne_bytes(answer[HEADER_SIZE-16..HEADER_SIZE-14].try_into().map_err(|_| AdsError{n_error : 1})?);
-        //println!("COMMAND: {:?}", n_cmd); // DEBUG
-        match n_cmd {
-            1 => return Ok(AdsCommand::ReadDeviceInfo),
-            2 => return Ok(AdsCommand::Read),
-            3 => return Ok(AdsCommand::Write),
-            4 => return Ok(AdsCommand::ReadState),
-            5 => return Ok(AdsCommand::WriteControl),
-            6 => return Ok(AdsCommand::AddDeviceNotification),
-            7 => return Ok(AdsCommand::DeleteDeviceNotification),
-            8 => return Ok(AdsCommand::DeviceNotification),
-            9 => return Ok(AdsCommand::ReadWrite),
-            _ => return Err(AdsError{n_error : 1}) // Internal Error // Map Error? .map_err(|_| AdsError{n_error : 1})?);
-        }
+    fn extract_cmd_tyte(answer: &[u8]) -> Result<AdsCommand>{
+        u16::from_ne_bytes(answer[HEADER_SIZE-16..HEADER_SIZE-14]
+            .try_into()
+            .map_err(|_| AdsError{n_error : 1})?)
+            .try_into()
     }
 
     fn extract_length(answer: &[u8]) -> Result<usize>{

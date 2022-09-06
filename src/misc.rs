@@ -138,7 +138,7 @@ pub enum AdsTimeout {
 
 #[derive(Debug)]
 pub struct AdsStateInfo {
-    pub ads_state    : u16,
+    pub ads_state    : AdsState,
     pub device_state : u16
 }
 
@@ -155,4 +155,73 @@ pub enum AdsCommand {
     DeleteDeviceNotification = 7,
     DeviceNotification = 8,
     ReadWrite = 9
+}
+
+impl TryFrom<u16> for AdsCommand{
+    type Error = Box<dyn error::Error>;
+
+    fn try_from(v: u16) -> Result<Self> {
+        match v {
+            x if x == AdsCommand::ReadDeviceInfo as u16 => Ok(AdsCommand::ReadDeviceInfo),
+            x if x == AdsCommand::Read as u16 => Ok(AdsCommand::Read),
+            x if x == AdsCommand::Write as u16 => Ok(AdsCommand::Write),
+            x if x == AdsCommand::ReadState as u16 => Ok(AdsCommand::ReadState),
+            x if x == AdsCommand::WriteControl as u16 => Ok(AdsCommand::WriteControl),
+            x if x == AdsCommand::AddDeviceNotification as u16 => Ok(AdsCommand::AddDeviceNotification),
+            x if x == AdsCommand::DeleteDeviceNotification as u16 => Ok(AdsCommand::DeleteDeviceNotification),
+            x if x == AdsCommand::DeviceNotification as u16 => Ok(AdsCommand::DeviceNotification),
+            x if x == AdsCommand::ReadWrite as u16 => Ok(AdsCommand::ReadWrite),
+            _ => Err(Box::new(AdsError{n_error : 1}))
+        }
+    }
+}
+
+#[derive(Copy, Clone)]
+#[allow(dead_code)]
+#[derive(Debug)]
+pub enum AdsState {
+    Invalid         = 0,
+    Idle            = 1,
+    Reset           = 2,
+    Init            = 3,
+    Start           = 4,
+    Run             = 5,
+    Stop            = 6,
+    SaveCFG         = 7,
+    LoadCFG         = 8,
+    Powerfailure    = 9,
+    PowerGood       = 10,
+    Error           = 11,
+    Shutdown        = 12,
+    Suspend         = 13,
+    Resume          = 14,
+    Config          = 15, // system is in config mode
+    Reconfig        = 16, // system should restart in config mode
+}
+
+impl TryFrom<u16> for AdsState {
+    type Error = Box<dyn error::Error>;
+
+    fn try_from(v: u16) -> Result<Self> {
+        match v {
+            x if x == AdsState::Invalid as u16          => Ok(AdsState::Invalid),
+            x if x == AdsState::Idle as u16             => Ok(AdsState::Idle),
+            x if x == AdsState::Reset as u16            => Ok(AdsState::Reset),
+            x if x == AdsState::Init as u16             => Ok(AdsState::Init),
+            x if x == AdsState::Start as u16            => Ok(AdsState::Start),
+            x if x == AdsState::Run as u16              => Ok(AdsState::Run),
+            x if x == AdsState::Stop as u16             => Ok(AdsState::Stop),
+            x if x == AdsState::SaveCFG as u16          => Ok(AdsState::SaveCFG),
+            x if x == AdsState::LoadCFG as u16          => Ok(AdsState::LoadCFG),
+            x if x == AdsState::Powerfailure as u16     => Ok(AdsState::Powerfailure),
+            x if x == AdsState::PowerGood as u16        => Ok(AdsState::PowerGood),
+            x if x == AdsState::Error as u16            => Ok(AdsState::Error),
+            x if x == AdsState::Shutdown as u16         => Ok(AdsState::Shutdown),
+            x if x == AdsState::Suspend as u16          => Ok(AdsState::Suspend),
+            x if x == AdsState::Resume as u16           => Ok(AdsState::Resume),
+            x if x == AdsState::Config as u16           => Ok(AdsState::Config),
+            x if x == AdsState::Reconfig as u16         => Ok(AdsState::Reconfig),
+            _ => Err(Box::new(AdsError{n_error : 1}))
+        }
+    }
 }
