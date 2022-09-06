@@ -29,7 +29,6 @@ impl Future for CommandCleaner {
     type Output = ();
     fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<()>
     {
-
         if let Some(waker) = &self.waker {
             let mut waker = waker.lock().unwrap();
 
@@ -40,7 +39,6 @@ impl Future for CommandCleaner {
             let waker = Arc::new(Mutex::new(cx.waker().clone()));
             self.waker = Some(waker.clone());
         }
-
 
         let waker = Arc::clone(&self.waker.as_ref().unwrap());
         let interval = self.interval;

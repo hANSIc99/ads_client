@@ -5,7 +5,6 @@ use crate::{Client, Result, AdsCommand, CommandManager, HEADER_SIZE, LEN_RW_REQ_
 impl Client{
 
     fn pre_read_write(&self,  idx_grp: u32, idx_offs: u32, read_data: &mut [u8], write_data: &[u8], invoke_id: u32) -> Bytes {
-
         let read_length     = read_data.len() as u32;
         let write_length    = write_data.len() as u32;
         let ams_header = self.c_init_ams_header(invoke_id, Some(LEN_RW_REQ_MIN as u32 + write_length), AdsCommand::ReadWrite);
@@ -29,7 +28,6 @@ impl Client{
     }
 
     fn post_read_write(rw_response : Bytes, read_data: &mut [u8]) -> Result<u32> {
-
         Client::eval_return_code(rw_response.as_ref())?;
 
         // Copy payload to destination buffer
@@ -72,7 +70,6 @@ impl Client{
     /// Checkout the examples [read_symbol](https://github.com/hANSIc99/ads_client/blob/main/examples/read_symbol.rs) 
     /// and [read_symbol_async](https://github.com/hANSIc99/ads_client/blob/main/examples/read_symbol_async.rs).
     pub async fn read_write(&self, idx_grp: u32, idx_offs: u32, read_data: &mut [u8], write_data: &[u8]) -> Result<u32>{
-        
         // Prepare ReadWrite request
         let invoke_id : u32 = u32::from(self.hdl_cnt.fetch_add(1, Ordering::SeqCst));
         let _rw_request = self.pre_read_write(idx_grp, idx_offs, read_data, write_data, invoke_id);

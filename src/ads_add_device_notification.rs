@@ -5,9 +5,7 @@ use crate::{AdsError, Client, AdsCommand, CommandManager, Notification, AdsNotif
 impl Client {
 
     fn pre_add_dev_not(&self, idx_grp: u32, idx_offs: u32, attributes : &AdsNotificationAttrib, invoke_id : u32) -> Bytes {
-
         let ams_header = self.c_init_ams_header(invoke_id, Some(LEN_ADD_DEV_NOT as u32), AdsCommand::AddDeviceNotification);
-
         let mut add_not_header : [u8; LEN_ADD_DEV_NOT] = [0; LEN_ADD_DEV_NOT];
 
         // Prepare AddDeviceNotificationRequest
@@ -45,7 +43,6 @@ impl Client {
     /// Checkout the extensive examples [notification](https://github.com/hANSIc99/ads_client/blob/main/examples/notification.rs) 
     /// and [notification_async](https://github.com/hANSIc99/ads_client/blob/main/examples/notification_async.rs).
     pub async fn add_device_notification(&self, idx_grp: u32, idx_offs: u32, attributes : &AdsNotificationAttrib, handle: &mut u32, callback : Notification, user_data: Option<&Arc<Mutex<BytesMut>>> ) -> Result<()>{
-        
         // Prepare AddDeviceNotification request
         let invoke_id : u32 = u32::from(self.hdl_cnt.fetch_add(1, Ordering::SeqCst));
         let _add_not_req = self.pre_add_dev_not(idx_grp, idx_offs, attributes, invoke_id);

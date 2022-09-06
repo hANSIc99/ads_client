@@ -5,7 +5,7 @@ use crate::{AdsError, Client, Result, AdsCommand, CommandManager, AdsStateInfo};
 impl Client {
 
     fn post_read_state(rs_response : Bytes) -> Result<AdsStateInfo> {
-
+        
         if rs_response.len() != 8 {
             return Err(Box::new(AdsError{n_error : 0xE })); // Invalid length
         } else {
@@ -41,7 +41,6 @@ impl Client {
     /// Checkout the examples [read_state](https://github.com/hANSIc99/ads_client/blob/main/examples/read_state.rs) 
     /// and [read_state_async](https://github.com/hANSIc99/ads_client/blob/main/examples/read_state_async.rs).
     pub async fn read_state(&self) -> Result<AdsStateInfo> {
-
         // Prepare read state request
         let invoke_id : u32 = u32::from(self.hdl_cnt.fetch_add(1, Ordering::SeqCst));
         let ams_header = self.c_init_ams_header(invoke_id, None, AdsCommand::ReadState);

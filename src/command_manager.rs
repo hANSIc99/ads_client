@@ -26,7 +26,6 @@ impl CommandManager {
     }
 }
 
-
 impl Future for CommandManager {
     type Output = Result<Bytes>;
    
@@ -56,7 +55,6 @@ impl Future for CommandManager {
                     return Poll::Pending
                 }
             }
-
         }
     }
 }

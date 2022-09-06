@@ -5,7 +5,6 @@ use crate::{Client, Result, AdsCommand, CommandManager, HEADER_SIZE, LEN_READ_RE
 impl Client {
 
     fn pre_read(&self, idx_grp: u32, idx_offs: u32, rd_len : usize, invoke_id: u32) -> Bytes {
-
         let ams_header = self.c_init_ams_header(invoke_id, Some(LEN_READ_REQ as u32), AdsCommand::Read);
         let mut read_header : [u8; LEN_READ_REQ] = [0; LEN_READ_REQ];
 
@@ -26,7 +25,6 @@ impl Client {
     }
 
     fn post_read(read_response : Bytes, data: &mut [u8]) -> Result<u32> {
-
         Client::eval_return_code(read_response.as_ref())?;
 
         // Copy payload to destination argument

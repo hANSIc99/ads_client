@@ -66,7 +66,6 @@ impl Client {
     /// Checkout the examples [write_symbol](https://github.com/hANSIc99/ads_client/blob/main/examples/write_symbol.rs) 
     /// and [write_symbol_async](https://github.com/hANSIc99/ads_client/blob/main/examples/write_symbol_async.rs).
     pub async fn write(&self, idx_grp: u32, idx_offs: u32, data: &[u8]) -> Result<()> {
-
         // Prepare write request
         let invoke_id : u32 = u32::from(self.hdl_cnt.fetch_add(1, Ordering::SeqCst));
         let _w_request = self.pre_write(idx_grp, idx_offs, data, invoke_id);

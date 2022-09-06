@@ -5,7 +5,6 @@ use crate::{Client, AdsCommand, CommandManager, HEADER_SIZE, LEN_DEL_DEV_NOT, Re
 impl Client {
 
     fn pre_delete_device_notification(&self, handle : u32, invoke_id : u32) -> Bytes {
-
         let ams_header = self.c_init_ams_header(invoke_id, Some(LEN_DEL_DEV_NOT as u32), AdsCommand::DeleteDeviceNotification);
 
         let del_not_header  : [u8; LEN_DEL_DEV_NOT] = [
@@ -28,12 +27,12 @@ impl Client {
         Client::eval_return_code(del_not_response.as_ref())?;
         Ok(())
     }
+
     /// Submit an asynchronous [ADS Delete Device Notification](https://infosys.beckhoff.com/content/1033/tc3_ads_intro/115881995.html?id=6216061301016726131) request.
     /// 
     /// Checkout the extensive examples [notification](https://github.com/hANSIc99/ads_client/blob/main/examples/notification.rs) 
     /// and [notification_async](https://github.com/hANSIc99/ads_client/blob/main/examples/notification_async.rs).
     pub async fn delete_device_notification(&self, handle: u32 ) -> Result<()>{
-
         // Prepare delete device notification request
         let invoke_id : u32 = u32::from(self.hdl_cnt.fetch_add(1, Ordering::SeqCst));
         let _del_not_req = self.pre_delete_device_notification(handle, invoke_id);
