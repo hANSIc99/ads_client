@@ -1,6 +1,5 @@
-use std::sync::{Arc, atomic::Ordering};
 use bytes::Bytes;
-use crate::{AdsError, Client, Result, AdsCommand, CommandManager, StateInfo};
+use crate::{AdsError, Client, Result, AdsCommand, StateInfo};
 
 impl Client {
 
@@ -42,15 +41,14 @@ impl Client {
     /// and [read_state_async](https://github.com/hANSIc99/ads_client/blob/main/examples/read_state_async.rs).
     pub async fn read_state(&self) -> Result<StateInfo> {
         // Prepare read state request
-        let invoke_id : u32 = u32::from(self.hdl_cnt.fetch_add(1, Ordering::SeqCst));
+        let invoke_id = self.create_invoke_id();
         let ams_header = self.c_init_ams_header(invoke_id, None, AdsCommand::ReadState);
         
         // Create handle
         self.register_command_handle(invoke_id, AdsCommand::ReadState);
 
         // Launch the CommandManager future
-        let a_handles = Arc::clone(&self.handles);
-        let cmd_man_future = CommandManager::new(self.timeout, invoke_id, a_handles);
+        let cmd_man_future = self.create_cmd_man_future(invoke_id);
 
         // Launch socket future
         let socket_future = self.socket_write(&ams_header);

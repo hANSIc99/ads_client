@@ -1,6 +1,5 @@
-use std::sync::{Arc, atomic::Ordering};
 use bytes::{Bytes, BytesMut};
-use crate::{Client, Result, AdsCommand, CommandManager, HEADER_SIZE, LEN_RW_REQ_MIN};
+use crate::{Client, Result, AdsCommand, HEADER_SIZE, LEN_RW_REQ_MIN};
 
 impl Client{
 
@@ -71,15 +70,14 @@ impl Client{
     /// and [read_symbol_async](https://github.com/hANSIc99/ads_client/blob/main/examples/read_symbol_async.rs).
     pub async fn read_write(&self, idx_grp: u32, idx_offs: u32, read_data: &mut [u8], write_data: &[u8]) -> Result<u32>{
         // Prepare ReadWrite request
-        let invoke_id : u32 = u32::from(self.hdl_cnt.fetch_add(1, Ordering::SeqCst));
+        let invoke_id = self.create_invoke_id();
         let _rw_request = self.pre_read_write(idx_grp, idx_offs, read_data, write_data, invoke_id);
 
         // Create handle
         self.register_command_handle(invoke_id, AdsCommand::ReadWrite);
 
         // Launch CommandManager future
-        let a_handles = Arc::clone(&self.handles);
-        let cmd_man_future = CommandManager::new(self.timeout, invoke_id, a_handles);
+        let cmd_man_future = self.create_cmd_man_future(invoke_id);
     
         // Launch socket future
         let socket_future = self.socket_write(&_rw_request);

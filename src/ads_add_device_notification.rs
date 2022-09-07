@@ -1,6 +1,6 @@
-use std::sync::{Arc, Mutex, atomic::Ordering};
+use std::sync::{Arc, Mutex};
 use bytes::{Bytes, BytesMut};
-use crate::{AdsError, Client, AdsCommand, CommandManager, Notification, AdsNotificationAttrib, HEADER_SIZE, LEN_ADD_DEV_NOT, Result};
+use crate::{AdsError, Client, AdsCommand, Notification, AdsNotificationAttrib, HEADER_SIZE, LEN_ADD_DEV_NOT, Result};
 
 impl Client {
 
@@ -44,16 +44,15 @@ impl Client {
     /// and [notification_async](https://github.com/hANSIc99/ads_client/blob/main/examples/notification_async.rs).
     pub async fn add_device_notification(&self, idx_grp: u32, idx_offs: u32, attributes : &AdsNotificationAttrib, handle: &mut u32, callback : Notification, user_data: Option<&Arc<Mutex<BytesMut>>> ) -> Result<()>{
         // Prepare AddDeviceNotification request
-        let invoke_id : u32 = u32::from(self.hdl_cnt.fetch_add(1, Ordering::SeqCst));
+        let invoke_id = self.create_invoke_id();
         let _add_not_req = self.pre_add_dev_not(idx_grp, idx_offs, attributes, invoke_id);
 
         // Create handle for request
         self.register_command_handle(invoke_id, AdsCommand::AddDeviceNotification);
 
         // Launch CommandManager future
-        let a_handles = Arc::clone(&self.handles);
-        let cmd_man_future = CommandManager::new(self.timeout, invoke_id, a_handles);
-
+        let cmd_man_future = self.create_cmd_man_future(invoke_id);
+        
         // Launch socket future
         let socket_future = self.socket_write(&_add_not_req);
 

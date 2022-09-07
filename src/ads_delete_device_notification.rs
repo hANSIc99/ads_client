@@ -1,6 +1,5 @@
-use std::sync::{Arc, atomic::Ordering};
 use bytes::{Bytes, BytesMut};
-use crate::{Client, AdsCommand, CommandManager, HEADER_SIZE, LEN_DEL_DEV_NOT, Result};
+use crate::{Client, AdsCommand, HEADER_SIZE, LEN_DEL_DEV_NOT, Result};
 
 impl Client {
 
@@ -34,15 +33,14 @@ impl Client {
     /// and [notification_async](https://github.com/hANSIc99/ads_client/blob/main/examples/notification_async.rs).
     pub async fn delete_device_notification(&self, handle: u32 ) -> Result<()>{
         // Prepare delete device notification request
-        let invoke_id : u32 = u32::from(self.hdl_cnt.fetch_add(1, Ordering::SeqCst));
+        let invoke_id = self.create_invoke_id();
         let _del_not_req = self.pre_delete_device_notification(handle, invoke_id);
 
         // Create handle for request
         self.register_command_handle(invoke_id, AdsCommand::DeleteDeviceNotification);
 
         // Launch the CommandManager future
-        let a_handles = Arc::clone(&self.handles);
-        let cmd_man_future = CommandManager::new(self.timeout, invoke_id, a_handles);
+        let cmd_man_future = self.create_cmd_man_future(invoke_id);
 
         // Launch socket future
         let socket_future = self.socket_write(&_del_not_req);

@@ -28,8 +28,7 @@ use std::time::Instant;
 use std::io;
 use std::net::SocketAddr;
 use std::mem::{size_of_val};
-use std::sync::{Arc, Mutex, atomic::AtomicU16};
-
+use std::sync::{Arc, Mutex, atomic::{AtomicU16, Ordering}};
 use tokio::net::TcpStream;
 use tokio::runtime;
 use tokio::io::{ReadHalf, WriteHalf};
@@ -382,6 +381,15 @@ impl Client {
             let mut not_handles = a_not_handles.lock().expect("Threading Error");
             not_handles.push(not_hdl);
         }
+    }
+
+    fn create_cmd_man_future(&self, invoke_id: u32) -> CommandManager {
+        let a_handles = Arc::clone(&self.handles);
+        CommandManager::new(self.timeout, invoke_id, a_handles)
+    }
+
+    fn create_invoke_id(&self) -> u32 {
+        u32::from(self.hdl_cnt.fetch_add(1, Ordering::SeqCst))
     }
 
     fn c_init_ams_header(&self, invoke_id : u32, length_payload : Option<u32>, cmd : AdsCommand) -> [u8; HEADER_SIZE] {

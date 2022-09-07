@@ -1,6 +1,5 @@
-use std::sync::{Arc, atomic::Ordering};
 use bytes::{Bytes, BytesMut};
-use crate::{Client, Result, AdsCommand, CommandManager, StateInfo, HEADER_SIZE, LEN_WR_CTRL_MIN};
+use crate::{Client, Result, AdsCommand, StateInfo, HEADER_SIZE, LEN_WR_CTRL_MIN};
 
 impl Client {
 
@@ -38,15 +37,14 @@ impl Client {
 
     pub async fn write_control(&self, state : &StateInfo, data: Option<&[u8]>) -> Result<()>{
         // Prepare write control request
-        let invoke_id : u32 = u32::from(self.hdl_cnt.fetch_add(1, Ordering::SeqCst));
+        let invoke_id = self.create_invoke_id();
         let _wr_ctr_request = self.pre_write_ctrl(state, data, invoke_id);
 
         // Create handle
         self.register_command_handle(invoke_id, AdsCommand::WriteControl);
 
         // Launch the CommandManager future
-        let a_handles = Arc::clone(&self.handles);
-        let cmd_man_future = CommandManager::new(self.timeout, invoke_id, a_handles);
+        let cmd_man_future = self.create_cmd_man_future(invoke_id);
 
         // Launch socket future
         let socket_future = self.socket_write(&_wr_ctr_request);
