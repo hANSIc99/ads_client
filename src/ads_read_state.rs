@@ -1,10 +1,10 @@
 use std::sync::{Arc, atomic::Ordering};
 use bytes::Bytes;
-use crate::{AdsError, Client, Result, AdsCommand, CommandManager, AdsStateInfo};
+use crate::{AdsError, Client, Result, AdsCommand, CommandManager, StateInfo};
 
 impl Client {
 
-    fn post_read_state(rs_response : Bytes) -> Result<AdsStateInfo> {
+    fn post_read_state(rs_response : Bytes) -> Result<StateInfo> {
 
         if rs_response.len() != 8 {
             return Err(Box::new(AdsError{n_error : 0xE })); // Invalid length
@@ -12,7 +12,7 @@ impl Client {
 
             Client::eval_return_code(&rs_response.slice(0..4))?;
 
-            Ok(AdsStateInfo{
+            Ok(StateInfo{
                 ads_state       : u16::from_ne_bytes(rs_response.slice(4..6)[..].try_into().unwrap()).try_into()?,
                 device_state    : u16::from_ne_bytes(rs_response.slice(6..8)[..].try_into().unwrap())
             })
@@ -40,7 +40,7 @@ impl Client {
     /// ```
     /// Checkout the examples [read_state](https://github.com/hANSIc99/ads_client/blob/main/examples/read_state.rs) 
     /// and [read_state_async](https://github.com/hANSIc99/ads_client/blob/main/examples/read_state_async.rs).
-    pub async fn read_state(&self) -> Result<AdsStateInfo> {
+    pub async fn read_state(&self) -> Result<StateInfo> {
         // Prepare read state request
         let invoke_id : u32 = u32::from(self.hdl_cnt.fetch_add(1, Ordering::SeqCst));
         let ams_header = self.c_init_ams_header(invoke_id, None, AdsCommand::ReadState);

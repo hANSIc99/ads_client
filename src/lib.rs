@@ -22,6 +22,7 @@ mod ads_read_state;
 mod ads_read_write;
 mod ads_add_device_notification;
 mod ads_delete_device_notification;
+mod ads_write_control;
 
 use std::time::Instant;
 use std::io;
@@ -39,8 +40,8 @@ use bytes::{Bytes, BytesMut};
 use command_cleaner::CommandCleaner;
 use command_manager::CommandManager;
 
-use misc::{AdsError, AdsCommand, Handle, NotHandle, AdsStateInfo, AmsNetId, AdsStampHeader, AdsNotificationSample};
-pub use misc::{AdsTimeout, AdsNotificationAttrib, AdsTransMode, Notification, Result}; // Re-export type
+use misc::{AdsError, AdsCommand, Handle, NotHandle, AmsNetId, AdsStampHeader, AdsNotificationSample};
+pub use misc::{AdsTimeout, AdsNotificationAttrib, AdsTransMode, StateInfo, AdsState, Notification, Result}; // Re-export type
 
 
 /// Size of the AMS/TCP + ADS headers
@@ -54,6 +55,7 @@ const LEN_ADD_DEV_NOT       : usize = 38;
 const LEN_STAMP_HEADER_MIN  : usize = 12;
 const LEN_NOT_SAMPLE_MIN    : usize = 8;
 const LEN_DEL_DEV_NOT       : usize = 4;
+const LEN_WR_CTRL_MIN       : usize = 8;
 
 enum ProcessStateMachine{
     ReadHeader,

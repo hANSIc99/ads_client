@@ -31,7 +31,7 @@ impl Future for CommandManager {
    
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<Bytes>>{
         if self.now.elapsed().as_secs() > self.timeout{
-            // Does this still work if the Future os moved between threads/cores?
+            // Does this still work if the future is moved between threads/cores?
             // https://doc.rust-lang.org/std/time/struct.Instant.html
             Poll::Ready(Err(Box::new(AdsError{n_error : ADSERR_CLIENT_SYNCTIMEOUT})))
         } else {

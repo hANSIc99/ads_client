@@ -137,7 +137,7 @@ pub enum AdsTimeout {
 }
 
 #[derive(Debug)]
-pub struct AdsStateInfo {
+pub struct StateInfo {
     pub ads_state    : AdsState,
     pub device_state : u16
 }
@@ -199,6 +199,7 @@ pub enum AdsState {
     Reconfig        = 16, // system should restart in config mode
 }
 
+// u16 to AdsState
 impl TryFrom<u16> for AdsState {
     type Error = Box<dyn error::Error>;
 
