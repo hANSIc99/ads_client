@@ -51,7 +51,7 @@ mod misc {
 
 pub type AmsNetId = [u8; 6];
 pub type Result<T> = std::result::Result<T, Box<dyn error::Error>>;
-/// Type definition for notification callback
+/// Type definition for notification callback.
 /// 
 /// Arguments:
 /// 1. Handle
@@ -73,7 +73,7 @@ impl fmt::Display for AdsError {
     }
 }
 
-/// Determines the notification mechanism
+/// Determines the notification mechanism.
 /// 
 /// - `ServerCycle` The notification is fired cyclically at intervals of [AdsNotificationAttrib::cycle_time].
 /// - `OnChange` The notification is fired only if the values has changed.
@@ -92,10 +92,7 @@ pub enum AdsTransMode {
 /// - `cb_length` Size of the datatype to monitor.
 /// - `AdsTransMode` Specifies when to trigger a notification (see [AdsTransMode]).
 /// - `max_delay` Maximal acceptable delay \[100ns\].
-/// - `cycle_time` The interval at which the variable is checked \[100ns]\.
-/// 
-/// # Examples
-/// 
+/// - `cycle_time` The interval at which the variable is checked \[100ns]\. 
 pub struct AdsNotificationAttrib {
     pub cb_length   : u32,
     pub trans_mode  : AdsTransMode,
@@ -127,15 +124,16 @@ pub struct NotHandle {
     pub not_hdl   : u32,
     pub user_data : Option<Arc<Mutex<BytesMut>>>,
 }
-/// Specifies the maximum waiting time for an ADS response
+/// Specifies the maximum waiting time for an ADS response.
 /// 
-/// `DefaultTimeout` Corresponds to 5 seconds
-/// `CustomTimeout` Value in seconds
+/// - [AdsTimeout::DefaultTimeout] Corresponds to 5 seconds.
+/// - [AdsTimeout::CustomTimeout] Value in seconds.
 pub enum AdsTimeout {
     DefaultTimeout,
     CustomTimeout(u64)
 }
 
+/// ADS State and device state of a target system.
 #[derive(Debug)]
 pub struct StateInfo {
     pub ads_state    : AdsState,
@@ -179,6 +177,12 @@ impl TryFrom<u16> for AdsCommand{
 #[derive(Copy, Clone)]
 #[allow(dead_code)]
 #[derive(Debug)]
+/// ADS State of target system.
+/// 
+/// To switch a TwinCAT 3 system to Config mode, set it to [AdsState::Reconfig], 
+/// for Run mode set it to [AdsState::Reset].
+/// 
+/// Checkout the [ADS Write Control example](https://github.com/hANSIc99/ads_client/blob/main/examples/write_control.rs) in the repsoitory.
 pub enum AdsState {
     Invalid         = 0,
     Idle            = 1,
@@ -199,7 +203,6 @@ pub enum AdsState {
     Reconfig        = 16, // system should restart in config mode
 }
 
-// u16 to AdsState
 impl TryFrom<u16> for AdsState {
     type Error = Box<dyn error::Error>;
 
