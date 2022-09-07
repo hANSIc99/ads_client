@@ -55,14 +55,7 @@ impl Future for CommandCleaner {
         let mut handles = a_handles.lock().expect("Threading Error");
         let now = Instant::now();
 
-        handles.retain( |hdl| {
-            // now() - hdl.timestamp < timeout == VALID
-            let test = now - hdl.timestamp < self.timeout;
-            // if !test {
-            //     println!("Handle invalidated");
-            // }
-            test
-        });
+        handles.retain( |hdl| now - hdl.timestamp < self.timeout );
 
         Poll::Pending
     }
