@@ -1,6 +1,6 @@
 # ADS Client
 
-An event driven, non-blocking ADS client for communication with Beckhoff controller.
+An asynchronous, non-blocking ADS client for communication with Beckhoff controller.
 This ADS client implementation requires the presence of a [TC1000 ADS router](https://www.beckhoff.com/en-en/products/automation/twincat/tc1xxx-twincat-3-base/tc1000.html) on the system.
 
 ## Examples
