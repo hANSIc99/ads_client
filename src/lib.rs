@@ -112,7 +112,7 @@ impl Client {
                     continue;
                 }
                 Err(e) => {
-                    return Err(e.into()); // TESTEN
+                    return Err(e.into());
                 }
             }
         }
