@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 use bytes::{Bytes, BytesMut};
-use crate::{AdsError, Client, AdsCommand, Notification, AdsNotificationAttrib, HEADER_SIZE, LEN_ADD_DEV_NOT, Result};
+use crate::{Client, AdsCommand, Notification, AdsNotificationAttrib, HEADER_SIZE, LEN_ADD_DEV_NOT, Result};
 
 impl Client {
 
@@ -28,7 +28,7 @@ impl Client {
     fn post_add_dev_not(&self, add_dev_not_response : Bytes, handle: &mut u32, callback : Notification, user_data: Option<&Arc<Mutex<BytesMut>>>) -> Result<()>{
         Client::eval_return_code(add_dev_not_response.as_ref())?;
 
-        *handle = u32::from_ne_bytes(add_dev_not_response[4..8].try_into().map_err(|_| AdsError{n_error : 1})?);
+        *handle = u32::from_ne_bytes(add_dev_not_response[4..8].try_into()?);
 
         // Check if registration of device notification was successfull
         if *handle != 0 {

@@ -94,13 +94,13 @@ pub struct Client {
 impl Client {
    
     async fn connect(answer: &mut [u8]) -> Result<TcpStream> {
-        let stream  = TcpStream::connect(&SocketAddr::from(([127, 0, 0, 1], 48898))).await?;
+        let stream  = TcpStream::connect(&SocketAddr::from(([127, 0, 0, 1], 48898))).await.map_err::<AdsError, _>(|err| err.into() )?;
         let handshake : [u8; 8] = [0x00, 0x10, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00 ];
 
         // WRITING
         loop {
             // Wait for the socket to be writable
-            stream.writable().await?;
+            stream.writable().await.map_err::<AdsError, _>(|err| err.into() )?;
     
             // Try to write data, this may still fail with `WouldBlock`
             // if the readiness event is a false positive.
@@ -112,7 +112,7 @@ impl Client {
                     continue;
                 }
                 Err(e) => {
-                    return Err(e.into());
+                    return Err(e.into()); // TESTEN
                 }
             }
         }
@@ -131,7 +131,7 @@ impl Client {
                         // println!("Connection established");
                         break;
                     } else {
-                        return Err(Box::new(AdsError{n_error : 18})) // ERR_PORTDISABLED
+                        return Err(AdsError{n_error : 18, s_msg : String::from("Port disabled – TwinCAT system service not started.")});
                     }
                 }
 
@@ -140,8 +140,7 @@ impl Client {
                 }
                 
                 Err(_) => {
-                    //return Err(e.into()); // Default error
-                    return Err(Box::new(AdsError{n_error : 18})) // ERR_PORTDISABLED
+                    return Err(AdsError{n_error : 18, s_msg : String::from("Port disabled – TwinCAT system service not started.")});
                 }
             }
         }
@@ -166,9 +165,9 @@ impl Client {
                            //println!("Zero Bytes read");
                         }
                         Ok(_) => {
-                            let len_payload = Client::extract_length(&header_buf).map_err(|_| Box::new(AdsError{n_error : 1})).unwrap();
-                            let invoke_id   = Client::extract_invoke_id(&header_buf).map_err(|_| Box::new(AdsError{n_error : 1})).unwrap();   
-                            let ads_cmd     = Client::extract_cmd_tyte(&header_buf).map_err(|_| Box::new(AdsError{n_error : 1})).unwrap();
+                            let len_payload = Client::extract_length(&header_buf).unwrap();
+                            let invoke_id   = Client::extract_invoke_id(&header_buf).unwrap();
+                            let ads_cmd     = Client::extract_cmd_tyte(&header_buf).unwrap();
                             // Create buffer of size payload
                             //println!("Payload: {:?}", len_payload);
                             //if len_payload > 0 {
@@ -236,13 +235,12 @@ impl Client {
                             stream.write(data).await?;
                         },
                         Err(_) => {
-                            return Err(Box::new(AdsError{n_error : 1}));
+                            return Err( AdsError { n_error : 10, s_msg : String::from("Writing to Tcp Stream socket failed") } );
                         }
                     }
                 }
                 //Err(Box::new(AdsError{ n_error : 1792 })) // DEBUG
-                Ok(())
-                
+                Ok(())          
     }
     
     /// Create a new instance of an ADS client.
@@ -423,7 +421,7 @@ impl Client {
         let ret_code = u32::from_ne_bytes(answer[0..4].try_into().unwrap());
 
         if ret_code != 0 {
-            return Err(Box::new(AdsError{ n_error : ret_code }));
+            return Err(AdsError{ n_error : ret_code, s_msg : String::from("Errorcode of ADS response") });
         } else {
             Ok(ret_code)
         }
@@ -434,10 +432,7 @@ impl Client {
     }
 
     fn extract_cmd_tyte(answer: &[u8]) -> Result<AdsCommand>{
-        u16::from_ne_bytes(answer[HEADER_SIZE-16..HEADER_SIZE-14]
-            .try_into()
-            .map_err(|_| AdsError{n_error : 1})?)
-            .try_into()
+        u16::from_ne_bytes(answer[HEADER_SIZE-16..HEADER_SIZE-14].try_into()?).try_into()
     }
 
     fn extract_length(answer: &[u8]) -> Result<usize>{

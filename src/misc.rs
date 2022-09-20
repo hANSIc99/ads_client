@@ -1,5 +1,4 @@
-use std::fmt;
-use std::error;
+use std::{fmt, io, num, error, convert, array};
 use std::time::Instant;
 use std::sync::{Arc, Mutex};
 use bytes::{Bytes, BytesMut};
@@ -50,7 +49,7 @@ mod misc {
 }
 
 pub type AmsNetId = [u8; 6];
-pub type Result<T> = std::result::Result<T, Box<dyn error::Error>>;
+pub type Result<T> = std::result::Result<T, AdsError>;
 /// Type definition for notification callback.
 /// 
 /// Arguments:
@@ -62,16 +61,53 @@ pub type Notification = fn(u32, u64, Bytes, Option<Arc<Mutex<BytesMut>>>) -> ();
 
 #[derive(Debug, Clone)]
 pub struct AdsError {
-    pub n_error : u32
+    pub n_error : u32,
+    pub s_msg   : String
 }
 
 impl error::Error for AdsError{}
 
 impl fmt::Display for AdsError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "AdsClientError 0x{:x}", self.n_error)
+        write!(f, "AdsClientError 0x{:x} - {}", self.n_error, self.s_msg)
     }
 }
+
+impl From<io::Error> for AdsError{
+    fn from(error: io::Error) -> Self {
+        // 10 / 0xA : ERR_NOIO
+        AdsError {n_error : 10, s_msg :  error.to_string()}
+    }
+}
+
+impl From<num::TryFromIntError> for AdsError{
+    fn from(error: num::TryFromIntError) -> Self {
+        // 1 : Internal Error
+        AdsError {n_error : 1, s_msg : error.to_string() }
+    }
+}
+
+impl From<array::TryFromSliceError> for AdsError{
+    fn from(error: array::TryFromSliceError) -> Self {
+        // 1 : Internal Error
+        AdsError {n_error : 1, s_msg : error.to_string() }
+    }
+}
+
+impl From<num::ParseIntError> for AdsError{
+    fn from(error: num::ParseIntError) -> Self {
+        // 1 : Internal Error
+        AdsError {n_error : 1, s_msg :  error.to_string() }
+    }
+}
+
+impl From<convert::Infallible> for AdsError{
+    fn from(_error: convert::Infallible) -> Self {
+        // 1 : Internal Error
+        AdsError {n_error : 1, s_msg : String::from("") }
+    }
+}
+
 
 /// Determines the notification mechanism.
 /// 
@@ -156,7 +192,7 @@ pub enum AdsCommand {
 }
 
 impl TryFrom<u16> for AdsCommand{
-    type Error = Box<dyn error::Error>;
+    type Error = AdsError;
 
     fn try_from(v: u16) -> Result<Self> {
         match v {
@@ -169,7 +205,7 @@ impl TryFrom<u16> for AdsCommand{
             x if x == AdsCommand::DeleteDeviceNotification as u16 => Ok(AdsCommand::DeleteDeviceNotification),
             x if x == AdsCommand::DeviceNotification as u16 => Ok(AdsCommand::DeviceNotification),
             x if x == AdsCommand::ReadWrite as u16 => Ok(AdsCommand::ReadWrite),
-            _ => Err(Box::new(AdsError{n_error : 1}))
+            _ => Err(AdsError{n_error : 1, s_msg : String::from("AdsCommand: Conversion from u16 failed")})
         }
     }
 }
@@ -204,7 +240,7 @@ pub enum AdsState {
 }
 
 impl TryFrom<u16> for AdsState {
-    type Error = Box<dyn error::Error>;
+    type Error = AdsError;
 
     fn try_from(v: u16) -> Result<Self> {
         match v {
@@ -225,7 +261,7 @@ impl TryFrom<u16> for AdsState {
             x if x == AdsState::Resume as u16           => Ok(AdsState::Resume),
             x if x == AdsState::Config as u16           => Ok(AdsState::Config),
             x if x == AdsState::Reconfig as u16         => Ok(AdsState::Reconfig),
-            _ => Err(Box::new(AdsError{n_error : 1}))
+            _ => Err(AdsError{n_error : 1, s_msg : String::from("AdsState: Conversion from u16 failed")})
         }
     }
 }

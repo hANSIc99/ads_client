@@ -33,7 +33,7 @@ impl Future for CommandManager {
         if self.now.elapsed().as_secs() > self.timeout{
             // Does this still work if the future is moved between threads/cores?
             // https://doc.rust-lang.org/std/time/struct.Instant.html
-            Poll::Ready(Err(Box::new(AdsError{n_error : ADSERR_CLIENT_SYNCTIMEOUT})))
+            Poll::Ready(Err(AdsError{n_error : ADSERR_CLIENT_SYNCTIMEOUT, s_msg : String::from("Timeout has occurred – the target is not responding in the specified ADS timeout.")}))
         } else {
             let a_handles = Arc::clone(&self.handle_register);
 

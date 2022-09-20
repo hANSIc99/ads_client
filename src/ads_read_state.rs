@@ -6,7 +6,7 @@ impl Client {
     fn post_read_state(rs_response : Bytes) -> Result<StateInfo> {
 
         if rs_response.len() != 8 {
-            return Err(Box::new(AdsError{n_error : 0xE })); // Invalid length
+            return Err(AdsError{n_error : 0xE, s_msg : String::from("Invalid AMS length") });
         } else {
 
             Client::eval_return_code(&rs_response.slice(0..4))?;
