@@ -59,6 +59,9 @@ pub type Result<T> = std::result::Result<T, AdsError>;
 /// 4. User data
 pub type Notification = fn(u32, u64, Bytes, Option<Arc<Mutex<BytesMut>>>) -> (); // handle, timestamp and user data
 
+/// Error type of returned Result
+///  
+/// An overview of possible error codes can be found in the [InfoSys](https://infosys.beckhoff.com/content/1033/devicemanager/374277003.html).
 #[derive(Debug, Clone)]
 pub struct AdsError {
     pub n_error : u32,
