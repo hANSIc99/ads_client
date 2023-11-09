@@ -13,14 +13,16 @@ The provided examples rely on the related TwinCAT 3 project in [TC3_Sample_Proje
 Build and execute the examples with ```cargo run --example <example-name>```.
 
 Following examples are available:
-- notification
-- notification_async
-- read_state
-- read_state_async
-- read_symbol
-- read_symbol_async
-- write_symbol
-- write_symbol_async
+- [notification](/examples/notification.rs)
+- [notification_async](/examples/notification_async.rs)
+- [read_state](/examples/read_state.rs)
+- [read_state_async](/examples/read_state_async.rs)
+- [read_symbol](/examples/read_symbol.rs)
+- [read_symbol_async](/examples/read_state_async.rs)
+- [write_symbol](/examples/write_symbol.rs)
+- [write_symbol_async](/examples/write_control_async.rs)
+- [write_control](/examples/write_symbol.rs)
+- [write_control_async](/examples/write_control_async.rs)
 
 ## Documentation
 
