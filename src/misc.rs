@@ -179,6 +179,15 @@ pub struct StateInfo {
     pub device_state : u16
 }
 
+/// Device information
+#[derive(Debug)]
+pub struct DeviceStateInfo {
+    pub major : u8,
+    pub minor : u8,
+    pub build : u16,
+    pub device_name : [u8, 16]
+}
+
 #[derive(Copy, Clone)]
 #[allow(dead_code)]
 #[derive(Debug)]

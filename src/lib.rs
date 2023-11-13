@@ -15,6 +15,7 @@
 //! - [Client::write_control]
 //! - [Client::add_device_notification]
 //! - [Client::delete_device_notification]
+//! - [Client::read_device_info]
 //! 
 //! The methods are implemented asynchronous and non-blocking based on the [tokio](https://tokio.rs/) runtime.
 //! 
@@ -33,6 +34,7 @@ mod ads_read_write;
 mod ads_add_device_notification;
 mod ads_delete_device_notification;
 mod ads_write_control;
+mod ads_read_device_info;
 
 use std::time::Instant;
 use std::io;
@@ -50,7 +52,7 @@ use command_cleaner::CommandCleaner;
 use command_manager::CommandManager;
 
 use misc::{AdsCommand, Handle, NotHandle, AmsNetId, AdsStampHeader, AdsNotificationSample};
-pub use misc::{AdsTimeout, AdsNotificationAttrib, AdsTransMode, StateInfo, AdsState, Notification, Result, AdsError}; // Re-export type
+pub use misc::{AdsTimeout, AdsNotificationAttrib, AdsTransMode, StateInfo, DeviceStateInfo, AdsState, Notification, Result, AdsError}; // Re-export type
 
 
 /// Size of the AMS/TCP + ADS headers
