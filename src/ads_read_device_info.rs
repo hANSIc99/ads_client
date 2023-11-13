@@ -14,7 +14,8 @@ impl Client {
             Ok(DeviceStateInfo{
                 major       : u8::from_ne_bytes(rd_dinfo_response.slice(4..5)[..].try_into().unwrap()),
                 minor       : u8::from_ne_bytes(rd_dinfo_response.slice(5..6)[..].try_into().unwrap()),
-                build       : u16::from_ne_bytes(rd_dinfo_response.slice(6..8)[..].try_into().unwrap())
+                build       : u16::from_ne_bytes(rd_dinfo_response.slice(6..8)[..].try_into().unwrap()),
+                //device_name : rd_dinfo_response
             })
         }
     }

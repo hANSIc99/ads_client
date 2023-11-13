@@ -185,7 +185,7 @@ pub struct DeviceStateInfo {
     pub major : u8,
     pub minor : u8,
     pub build : u16,
-    pub device_name : [u8, 16]
+    //pub device_name : [u8, 16]
 }
 
 #[derive(Copy, Clone)]
