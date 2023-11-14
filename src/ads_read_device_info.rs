@@ -1,4 +1,5 @@
-use bytes::Bytes;
+use bytes::{Bytes, Buf};
+use std::io::Read;
 use crate::{AdsError, Client, Result, AdsCommand, DeviceStateInfo};
 
 impl Client {
@@ -11,10 +12,15 @@ impl Client {
 
             Client::eval_return_code(&rd_dinfo_response.slice(0..4))?;
 
+            let mut s_device_name = String::new();
+            rd_dinfo_response.slice(8..24)[..].reader().read_to_string(&mut s_device_name)?;
+
+
             Ok(DeviceStateInfo{
                 major       : u8::from_ne_bytes(rd_dinfo_response.slice(4..5)[..].try_into().unwrap()),
                 minor       : u8::from_ne_bytes(rd_dinfo_response.slice(5..6)[..].try_into().unwrap()),
-                build       : u16::from_ne_bytes(rd_dinfo_response.slice(6..8)[..].try_into().unwrap())
+                build       : u16::from_ne_bytes(rd_dinfo_response.slice(6..8)[..].try_into().unwrap()),
+                device_name : s_device_name
             })
         }
     }
@@ -24,22 +30,29 @@ impl Client {
     /// 
     /// # Example
     ///
-    /// ```rust
-    /// use ads_client::{Client, AdsTimeout, Result};
-    /// #[tokio::main]
-    /// async fn main() -> Result<()> {
+    /// ```rust 
+    ///use ads_client::{Client, AdsTimeout, Result};
+    ///
+    ///#[tokio::main]
+    ///async fn main() -> Result<()> {
     ///
     ///    let ads_client = Client::new("5.80.201.232.1.1", 10000, AdsTimeout::DefaultTimeout).await?;
-    ///
+    ///    
     ///    match ads_client.read_device_info().await {
-    ///        Ok(device_info) => println!("DeviceInfo: {:?}", device_info),
+    ///        Ok(device_info) => {
+    ///            println!("DeviceInfo: TwinCAT {}.{}.{} , Device Name: {}", 
+    ///                device_info.major, 
+    ///                device_info.minor,
+    ///                device_info.build,
+    ///                device_info.device_name)
+    ///        }
     ///        Err(err) => println!("Error: {}", err.to_string())
     ///    }
     ///    Ok(())
     ///}
     /// ```
-    /// Checkout the examples [read_state](https://github.com/hANSIc99/ads_client/blob/main/examples/read_device_info.rs) 
-    /// and [read_state_async](https://github.com/hANSIc99/ads_client/blob/main/examples/read_device_info_async.rs).
+    /// Checkout the examples [read_device_info](https://github.com/hANSIc99/ads_client/blob/main/examples/read_device_info.rs) 
+    /// and [read_device_info_async](https://github.com/hANSIc99/ads_client/blob/main/examples/read_device_info_async.rs).
     pub async fn read_device_info(&self) -> Result<DeviceStateInfo> {
         // Prepare read device info request
         let invoke_id = self.create_invoke_id();

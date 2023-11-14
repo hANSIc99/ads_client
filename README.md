@@ -23,6 +23,8 @@ Following examples are available:
 - [write_symbol_async](/examples/write_control_async.rs)
 - [write_control](/examples/write_symbol.rs)
 - [write_control_async](/examples/write_control_async.rs)
+- [read_device_info](/examples/read_device_info.rs)
+- [read_device_info_async](/examples/read_device_info_async.rs)
 
 ## Documentation
 
