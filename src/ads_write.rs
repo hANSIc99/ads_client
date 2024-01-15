@@ -1,5 +1,5 @@
 use bytes::{Bytes, BytesMut};
-use crate::{Client, Result, AdsCommand, HEADER_SIZE, LEN_W_REQ_MIN};
+use crate::{Client, Result, AdsCommand, HEADER_SIZE, LEN_W_REQ_MIN, misc::HandleData};
 
 impl Client {
 
@@ -24,8 +24,10 @@ impl Client {
         _w_request.freeze()
     }
 
-    fn post_write(w_response : Bytes) -> Result<()> {
-        Client::eval_return_code(w_response.as_ref())?;
+    fn post_write(w_response : HandleData) -> Result<()> {
+
+        Client::eval_ams_error(w_response.ams_err)?;
+        Client::eval_return_code(w_response.payload.unwrap().as_ref())?;
         Ok(())
     }
     /// Submit an asynchronous [ADS Write](https://infosys.beckhoff.com/content/1033/tc3_ads_intro/115877899.html) request.

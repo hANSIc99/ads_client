@@ -3,8 +3,7 @@ use std::future::Future;
 use std::task::{Context, Poll};
 use std::sync::{Arc, Mutex};
 use std::pin::Pin;
-use bytes::Bytes;
-use crate::{AdsError, Result, Handle};
+use crate::{AdsError, Result, Handle, HandleData};
 
 pub const ADSERR_CLIENT_SYNCTIMEOUT : u32 = 0x745;
 
@@ -27,9 +26,9 @@ impl CommandManager {
 }
 
 impl Future for CommandManager {
-    type Output = Result<Bytes>;
+    type Output = Result<HandleData>;
    
-    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<Bytes>>{
+    fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<HandleData>>{
         if self.now.elapsed().as_secs() > self.timeout{
             // Does this still work if the future is moved between threads/cores?
             // https://doc.rust-lang.org/std/time/struct.Instant.html
@@ -41,14 +40,14 @@ impl Future for CommandManager {
             let mut _iter = handles.iter_mut();
             let pos = _iter.position( | hdl | {
                 // Proceed when the invoke ID is match and data is attached
-                hdl.invoke_id == self.invoke_id && hdl.data.is_some()
+                hdl.invoke_id == self.invoke_id && hdl.data.payload.is_some()
             });
 
             match pos {
                 Some(_pos) => {
                     //
                     let hdl = handles.swap_remove(pos.unwrap());
-                    return Poll::Ready(Ok(hdl.data.unwrap()))
+                    return Poll::Ready(Ok(hdl.data)) // TODO
                 },
                 None => {
                     cx.waker().wake_by_ref();

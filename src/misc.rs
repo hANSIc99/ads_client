@@ -50,6 +50,7 @@ mod misc {
 
 pub type AmsNetId = [u8; 6];
 pub type Result<T> = std::result::Result<T, AdsError>;
+
 /// Type definition for notification callback.
 /// 
 /// Arguments:
@@ -151,10 +152,16 @@ pub struct AdsNotificationSample {
     pub sample_size : u32
 }
 
+#[derive(Default)]
+pub struct HandleData {
+    pub ams_err : u32,
+    pub payload : Option<Bytes>
+}
+
 pub struct Handle {
     pub cmd_type  : AdsCommand,
     pub invoke_id : u32,
-    pub data      : Option<Bytes>,
+    pub data      : HandleData,
     pub timestamp : Instant,
 }
 

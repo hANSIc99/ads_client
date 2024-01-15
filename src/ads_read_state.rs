@@ -1,21 +1,27 @@
-use bytes::Bytes;
-use crate::{AdsError, Client, Result, AdsCommand, StateInfo};
+use crate::{AdsError, Client, Result, AdsCommand, StateInfo, HandleData};
 
 impl Client {
 
-    fn post_read_state(rs_response : Bytes) -> Result<StateInfo> {
+    fn post_read_state(rs_response : HandleData) -> Result<StateInfo> {
 
-        if rs_response.len() != 8 {
+        let payload = rs_response.payload.unwrap();
+        //let mut b_respone : [u8; 4] = payload.slice(0..4)[..].try_into().unwrap(); // TODO: Debug only
+        
+        Client::eval_ams_error(rs_response.ams_err)?;
+        Client::eval_return_code(&payload.slice(0..4))?;
+
+         if payload.len() != 8 {
             return Err(AdsError{n_error : 0xE, s_msg : String::from("Invalid AMS length") });
         } else {
 
-            Client::eval_return_code(&rs_response.slice(0..4))?;
+            Client::eval_return_code(&payload.slice(0..4))?;
 
             Ok(StateInfo{
-                ads_state       : u16::from_ne_bytes(rs_response.slice(4..6)[..].try_into().unwrap()).try_into()?,
-                device_state    : u16::from_ne_bytes(rs_response.slice(6..8)[..].try_into().unwrap())
+                ads_state       : u16::from_ne_bytes(payload.slice(4..6)[..].try_into().unwrap()).try_into()?,
+                device_state    : u16::from_ne_bytes(payload.slice(6..8)[..].try_into().unwrap())
             })
         }
+
     }
 
     /// Submit an asynchronous [ADS Read State](https://infosys.beckhoff.com/content/1033/tc3_ads_intro/115878923.html) request.

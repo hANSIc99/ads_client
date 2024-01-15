@@ -39,7 +39,7 @@ mod ads_read_device_info;
 use std::time::Instant;
 use std::io;
 use std::net::SocketAddr;
-use std::mem::{size_of_val};
+use std::mem::size_of_val;
 use std::sync::{Arc, Mutex, atomic::{AtomicU16, Ordering}};
 use tokio::net::TcpStream;
 use tokio::runtime;
@@ -51,7 +51,7 @@ use bytes::{Bytes, BytesMut};
 use command_cleaner::CommandCleaner;
 use command_manager::CommandManager;
 
-use misc::{AdsCommand, Handle, NotHandle, AmsNetId, AdsStampHeader, AdsNotificationSample};
+use misc::{AdsCommand, Handle, HandleData, NotHandle, AmsNetId, AdsStampHeader, AdsNotificationSample};
 pub use misc::{AdsTimeout, AdsNotificationAttrib, AdsTransMode, StateInfo, DeviceStateInfo, AdsState, Notification, Result, AdsError}; // Re-export type
 
 
@@ -70,7 +70,7 @@ const LEN_WR_CTRL_MIN       : usize = 8;
 
 enum ProcessStateMachine{
     ReadHeader,
-    ReadPayload { len_payload: usize, invoke_id: u32, cmd: AdsCommand}
+    ReadPayload { len_payload: usize, err_code: u32, invoke_id: u32, cmd: AdsCommand}
 }
 
 /// An ADS client to use in combination with the [TC1000 ADS router](https://www.beckhoff.com/en-en/products/automation/twincat/tc1xxx-twincat-3-base/tc1000.html).
@@ -168,6 +168,7 @@ impl Client {
                         }
                         Ok(_) => {
                             let len_payload = Client::extract_length(&header_buf).unwrap();
+                            let err_code = Client::extract_error_code(&header_buf).unwrap();
                             let invoke_id   = Client::extract_invoke_id(&header_buf).unwrap();
                             let ads_cmd     = Client::extract_cmd_tyte(&header_buf).unwrap();
                             // Create buffer of size payload
@@ -175,6 +176,7 @@ impl Client {
                             //if len_payload > 0 {
                             state = ProcessStateMachine::ReadPayload{
                                 len_payload : len_payload,
+                                err_code    : err_code,
                                 invoke_id   : invoke_id,
                                 cmd         : ads_cmd
                             };
@@ -189,7 +191,7 @@ impl Client {
                     }
                 }
                 
-                ProcessStateMachine::ReadPayload {len_payload, invoke_id, cmd} => {
+                ProcessStateMachine::ReadPayload {len_payload, err_code, invoke_id, cmd} => {
 
                     let mut payload = BytesMut::with_capacity(*len_payload);
                     match rd_stream.read_buf(&mut payload).await {
@@ -207,7 +209,7 @@ impl Client {
                                 },
                                 _ => {
                                     let _handles = Arc::clone(&handles);
-                                    rt.spawn(Client::process_command(*invoke_id, _handles, buf));
+                                    rt.spawn(Client::process_command(*err_code, *invoke_id, _handles, buf));
                                 }
 
                             };
@@ -368,7 +370,7 @@ impl Client {
         let rs_req_hdl = Handle {
             cmd_type  : cmd,
             invoke_id : invoke_id,
-            data      : None,
+            data      : HandleData::default(),
             timestamp : Instant::now(),
         };
     
@@ -423,10 +425,21 @@ impl Client {
         let ret_code = u32::from_ne_bytes(answer[0..4].try_into().unwrap());
 
         if ret_code != 0 {
-            return Err(AdsError{ n_error : ret_code, s_msg : String::from("Errorcode of ADS response") });
+            return Err(AdsError{ n_error : ret_code, s_msg : String::from("Errorcode of ADS response") }); // TODO
         } else {
             Ok(ret_code)
         }
+    }
+
+    fn eval_ams_error(ams_err : u32) -> Result<()> {
+        if ams_err != 0 {
+            return Err(AdsError{n_error : ams_err, s_msg : String::from("Errorcode of ADS response") });
+        }
+        Ok(())
+    }
+
+    fn extract_error_code(answer: &[u8]) -> Result<u32> {
+        Ok(u32::from_ne_bytes(answer[HEADER_SIZE-8..HEADER_SIZE-4].try_into()?))
     }
 
     fn extract_invoke_id(answer: &[u8]) -> Result<u32> {
@@ -454,12 +467,13 @@ impl Client {
         Ok(u32::from_ne_bytes(answer[4..8].try_into()?))
     }
 
-    async fn process_command(invoke_id: u32, cmd_register: Arc<Mutex<Vec<Handle>>>, data: Bytes){
+    async fn process_command(err_code: u32, invoke_id: u32, cmd_register: Arc<Mutex<Vec<Handle>>>, data: Bytes){
         let mut _handles = cmd_register.lock().expect("Threading Error");
         let mut _iter = _handles.iter_mut();
 
         if let Some(hdl) = _iter.find( | hdl | hdl.invoke_id == invoke_id) {
-            hdl.data = Some(data);
+            hdl.data.payload = Some(data);
+            hdl.data.ams_err = err_code;
         }
     }
 

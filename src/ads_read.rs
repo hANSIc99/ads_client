@@ -1,5 +1,5 @@
 use bytes::{Bytes, BytesMut};
-use crate::{Client, Result, AdsCommand, HEADER_SIZE, LEN_READ_REQ};
+use crate::{Client, Result, AdsCommand, HEADER_SIZE, LEN_READ_REQ, misc::HandleData};
 
 impl Client {
 
@@ -23,16 +23,19 @@ impl Client {
         _read_request.freeze()
     }
 
-    fn post_read(read_response : Bytes, data: &mut [u8]) -> Result<u32> {
-        Client::eval_return_code(read_response.as_ref())?;
+    fn post_read(read_response : HandleData, data: &mut [u8]) -> Result<u32> {
+
+        let payload = read_response.payload.unwrap();
+
+        Client::eval_ams_error(read_response.ams_err)?;
+        Client::eval_return_code(payload.as_ref())?;
 
         // Copy payload to destination argument
         // Payload starts at offset 8
-        let iter_payload = read_response[8..].into_iter();
+        let iter_payload = payload[8..].into_iter();
         let iter_read_data = data.iter_mut();
 
         // Zip payload and destination together
-        //let iter_data = zip(iter_read_data, iter_payload); // BAUSTELLEX
         let iter_data = iter_read_data.zip(iter_payload);
     
         // Iterate till the first iterator is exhausted
@@ -41,7 +44,7 @@ impl Client {
             *rd = *pl; // Copy from response to data
         }
 
-        Ok(read_response[8..].len() as u32)
+        Ok(payload[8..].len() as u32)
     }
     /// Submit an asynchronous [ADS Read](https://infosys.beckhoff.com/content/1033/tc3_ads_intro/115876875.html?id=4960931295000833536) request.
     /// 

@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 use bytes::{Bytes, BytesMut};
-use crate::{Client, AdsCommand, Notification, AdsNotificationAttrib, HEADER_SIZE, LEN_ADD_DEV_NOT, Result};
+use crate::{Client, AdsCommand, Notification, AdsNotificationAttrib, HEADER_SIZE, LEN_ADD_DEV_NOT, Result, misc::HandleData};
 
 impl Client {
 
@@ -25,17 +25,20 @@ impl Client {
         _add_not_req.freeze()
     }
 
-    fn post_add_dev_not(&self, add_dev_not_response : Bytes, handle: &mut u32, callback : Notification, user_data: Option<&Arc<Mutex<BytesMut>>>) -> Result<()>{
-        Client::eval_return_code(add_dev_not_response.as_ref())?;
+    fn post_add_dev_not(&self, add_dev_not_response : HandleData, handle: &mut u32, callback : Notification, user_data: Option<&Arc<Mutex<BytesMut>>>) -> Result<()>{
+        
+        let payload = add_dev_not_response.payload.unwrap();
 
-        *handle = u32::from_ne_bytes(add_dev_not_response[4..8].try_into()?);
+        Client::eval_ams_error(add_dev_not_response.ams_err)?;
+        Client::eval_return_code(payload.as_ref())?;
+
+        *handle = u32::from_ne_bytes(payload[4..8].try_into()?);
 
         // Check if registration of device notification was successfull
         if *handle != 0 {
             // Register notification handle
             self.register_not_handle(*handle, callback, user_data);
         }
-
         Ok(())
     }
     /// Submit an asynchronous [ADS Add Device Notification](https://infosys.beckhoff.com/content/1033/tc3_ads_intro/115880971.html?id=7388557527878561663) request.

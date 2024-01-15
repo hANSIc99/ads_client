@@ -1,5 +1,5 @@
 use bytes::{Bytes, BytesMut};
-use crate::{Client, Result, AdsCommand, HEADER_SIZE, LEN_RW_REQ_MIN};
+use crate::{Client, Result, AdsCommand, HEADER_SIZE, LEN_RW_REQ_MIN, misc::HandleData};
 
 impl Client{
 
@@ -26,12 +26,16 @@ impl Client{
         _rw_request.freeze()
     }
 
-    fn post_read_write(rw_response : Bytes, read_data: &mut [u8]) -> Result<u32> {
-        Client::eval_return_code(rw_response.as_ref())?;
+    fn post_read_write(rw_response : HandleData, read_data: &mut [u8]) -> Result<u32> {
+
+        let payload = rw_response.payload.unwrap();
+
+        Client::eval_ams_error(rw_response.ams_err)?;
+        Client::eval_return_code(payload.as_ref())?;
 
         // Copy payload to destination buffer
         // Payload starts at offset 8
-        let iter_payload = rw_response[8..].into_iter();
+        let iter_payload = payload[8..].into_iter();
         let iter_read_data = read_data.iter_mut();
     
         let iter_data = iter_read_data.zip(iter_payload);
@@ -42,7 +46,8 @@ impl Client{
             *rd = *pl; // Copy from response to read data
         }
 
-        Ok(rw_response[8..].len() as u32)
+        Ok(payload[8..].len() as u32)
+
     }
 
     /// Submit an asynchronous [ADS Read Write](https://infosys.beckhoff.com/content/1033/tc3_ads_intro/115884043.html?id=2085949217954035635) request.

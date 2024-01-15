@@ -1,5 +1,5 @@
 use bytes::{Bytes, BytesMut};
-use crate::{Client, AdsCommand, HEADER_SIZE, LEN_DEL_DEV_NOT, Result};
+use crate::{Client, AdsCommand, HEADER_SIZE, LEN_DEL_DEV_NOT, Result, misc::HandleData};
 
 impl Client {
 
@@ -22,8 +22,9 @@ impl Client {
         _del_not_req.freeze()
     }
 
-    fn post_delete_device_notification(del_not_response : Bytes) -> Result<()>{
-        Client::eval_return_code(del_not_response.as_ref())?;
+    fn post_delete_device_notification(del_not_response : HandleData) -> Result<()>{
+        Client::eval_ams_error(del_not_response.ams_err)?;
+        Client::eval_return_code(del_not_response.payload.unwrap().as_ref())?;
         Ok(())
     }
 

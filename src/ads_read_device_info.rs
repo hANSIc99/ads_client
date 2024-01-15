@@ -1,25 +1,29 @@
-use bytes::{Bytes, Buf};
+use bytes::Buf;
 use std::io::Read;
-use crate::{AdsError, Client, Result, AdsCommand, DeviceStateInfo};
+use crate::{AdsError, Client, Result, AdsCommand, DeviceStateInfo, misc::HandleData};
 
 impl Client {
 
-    fn post_read_device_info(rd_dinfo_response : Bytes) -> Result<DeviceStateInfo> {
+    fn post_read_device_info(rd_dinfo_response : HandleData) -> Result<DeviceStateInfo> {
 
-        if rd_dinfo_response.len() != 24 {
+        let payload = rd_dinfo_response.payload.unwrap();
+
+        Client::eval_ams_error(rd_dinfo_response.ams_err)?;
+
+        if payload.len() != 24 {
             return Err(AdsError{n_error : 0xE, s_msg : String::from("Invalid AMS length") });
         } else {
 
-            Client::eval_return_code(&rd_dinfo_response.slice(0..4))?;
+            Client::eval_return_code(&payload.slice(0..4))?;
 
             let mut s_device_name = String::new();
-            rd_dinfo_response.slice(8..24)[..].reader().read_to_string(&mut s_device_name)?;
+            payload.slice(8..24)[..].reader().read_to_string(&mut s_device_name)?;
 
 
             Ok(DeviceStateInfo{
-                major       : u8::from_ne_bytes(rd_dinfo_response.slice(4..5)[..].try_into().unwrap()),
-                minor       : u8::from_ne_bytes(rd_dinfo_response.slice(5..6)[..].try_into().unwrap()),
-                build       : u16::from_ne_bytes(rd_dinfo_response.slice(6..8)[..].try_into().unwrap()),
+                major       : u8::from_ne_bytes(payload.slice(4..5)[..].try_into().unwrap()),
+                minor       : u8::from_ne_bytes(payload.slice(5..6)[..].try_into().unwrap()),
+                build       : u16::from_ne_bytes(payload.slice(6..8)[..].try_into().unwrap()),
                 device_name : s_device_name
             })
         }
