@@ -19,7 +19,7 @@ impl CommandCleaner {
         CommandCleaner {
             waker               : None,
             handle_register     : handle_register,
-            interval            : interval,
+            interval            : interval, // seconds
             timeout             : Duration::from_secs(timeout)
         }
     }

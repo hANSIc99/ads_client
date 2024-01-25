@@ -3,6 +3,7 @@ use std::future::Future;
 use std::task::{Context, Poll};
 use std::sync::{Arc, Mutex};
 use std::pin::Pin;
+use log::{warn};
 use crate::{AdsError, Result, Handle, HandleData};
 
 pub const ADSERR_CLIENT_SYNCTIMEOUT : u32 = 0x745;
@@ -32,6 +33,7 @@ impl Future for CommandManager {
         if self.now.elapsed().as_secs() > self.timeout{
             // Does this still work if the future is moved between threads/cores?
             // https://doc.rust-lang.org/std/time/struct.Instant.html
+            warn!("Command expired - invoke ID: {}", self.invoke_id);
             Poll::Ready(Err(AdsError{n_error : ADSERR_CLIENT_SYNCTIMEOUT, s_msg : String::from("Timeout has occurred – the target is not responding in the specified ADS timeout.")}))
         } else {
             let a_handles = Arc::clone(&self.handle_register);
@@ -47,7 +49,7 @@ impl Future for CommandManager {
                 Some(_pos) => {
                     //
                     let hdl = handles.swap_remove(pos.unwrap());
-                    return Poll::Ready(Ok(hdl.data)) // TODO
+                    return Poll::Ready(Ok(hdl.data)) // TODO: remove unwrap
                 },
                 None => {
                     cx.waker().wake_by_ref();

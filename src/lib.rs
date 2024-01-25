@@ -45,7 +45,7 @@ use tokio::net::TcpStream;
 use tokio::runtime;
 use tokio::io::{ReadHalf, WriteHalf};
 use tokio::io::{AsyncWriteExt, AsyncReadExt};
-
+use log::{trace, debug, info, warn, error};
 use bytes::{Bytes, BytesMut};
 
 use command_cleaner::CommandCleaner;
@@ -111,9 +111,11 @@ impl Client {
                     break;
                 }
                 Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
+                    warn!("TcpStream: false positive reaction / stream was not yet ready for reading {:?}", e);
                     continue;
                 }
                 Err(e) => {
+                    error!("Failed to write to socket");
                     return Err(e.into());
                 }
             }
@@ -130,7 +132,7 @@ impl Client {
                 Ok(0) => break,
                 Ok(n) => {
                     if n == 14 {
-                        // println!("Connection established");
+                        info!("Connection to AMS router established");
                         break;
                     } else {
                         return Err(AdsError{n_error : 18, s_msg : String::from("Port disabled – TwinCAT system service not started.")});
@@ -138,6 +140,7 @@ impl Client {
                 }
 
                 Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
+                    warn!("TcpStream: false positive reaction / stream was not yet ready for writing {:?}", e);
                     continue;
                 }
                 
@@ -159,12 +162,12 @@ impl Client {
             match &mut state {
 
                 ProcessStateMachine::ReadHeader => {
-                    //println!("READ AMS/ADS HEADER...");
+                    trace!("Start reading AMS/ADS header");
                     let mut header_buf : [u8; HEADER_SIZE] = [0; HEADER_SIZE];
 
                     match rd_stream.read(&mut header_buf).await {
                         Ok(0) => {
-                           //println!("Zero Bytes read");
+                           warn!("Zero Bytes read");
                         }
                         Ok(_) => {
                             let len_payload = Client::extract_length(&header_buf).unwrap();
@@ -172,7 +175,7 @@ impl Client {
                             let invoke_id   = Client::extract_invoke_id(&header_buf).unwrap();
                             let ads_cmd     = Client::extract_cmd_tyte(&header_buf).unwrap();
                             // Create buffer of size payload
-                            //println!("Payload: {:?}", len_payload);
+                            trace!("Received payload: {:?} byte", len_payload);
                             //if len_payload > 0 {
                             state = ProcessStateMachine::ReadPayload{
                                 len_payload : len_payload,
@@ -183,20 +186,25 @@ impl Client {
                             //}
                         }
                         Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
-                            //continue;
+                            warn!("TcpStream: false positive reaction / stream was not yet ready for reading{:?}", e);
+                            continue;
                         }
                         Err(e) => {
+                            error!("Socket Error (0x1): {:?}", e);
                             panic!("Socket Error (0x1): {:?}", e);
                         }
                     }
                 }
                 
                 ProcessStateMachine::ReadPayload {len_payload, err_code, invoke_id, cmd} => {
-
+                    
+                    //trace!("Start reading payload");
                     let mut payload = BytesMut::with_capacity(*len_payload);
+
                     match rd_stream.read_buf(&mut payload).await {
                         Ok(0) => {
-                           state = ProcessStateMachine::ReadHeader;
+                            info!("ADS command {:?}, invoke ID: {:?}: - zero payload", cmd, invoke_id);
+                            state = ProcessStateMachine::ReadHeader;
                         }
                         Ok(_) => {
                             
@@ -217,9 +225,11 @@ impl Client {
                             state = ProcessStateMachine::ReadHeader;
                         }
                         Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
-                            //continue;
+                            warn!("ADS command {:?}, invoke ID: {:?}: - WouldBlock error during reading occured", cmd, invoke_id);
+                            continue;
                         }
                         Err(e) => {
+                            error!("ADS command {:?}, invoke ID: {:?}: - Error occurred: {:?}", cmd, invoke_id, e);
                             panic!("Socket Error (0x1): {:?}", e);
                         }
                     } // match
@@ -284,9 +294,7 @@ impl Client {
         let mut answer : [u8; 14] = [0; 14];
 
         let _stream = Client::connect(&mut answer).await?;
-
-        // let client_port : u16 = u16::from_ne_bytes(answer[12..14].try_into().unwrap());
-        // println!("Client ADS Port opened: {:?}", client_port);
+        info!("ADS client port opened: {}", u16::from_ne_bytes(answer[12..14].try_into().unwrap()));
 
         // Split the stream into a read and write part
         //
@@ -296,7 +304,6 @@ impl Client {
         let (read, write) = tokio::io::split(_stream);
 
         let a_socket_wrt = Arc::new(Mutex::new(write));
-        
 
         // Create atomic instances of the handle vector
         let a_handles = Arc::new(Mutex::new( Vec::<Handle>::new() ));
@@ -468,12 +475,15 @@ impl Client {
     }
 
     async fn process_command(err_code: u32, invoke_id: u32, cmd_register: Arc<Mutex<Vec<Handle>>>, data: Bytes){
-        let mut _handles = cmd_register.lock().expect("Threading Error");
+        trace!("Start processing response: invoke ID: {}", invoke_id);
+        let mut _handles = cmd_register.lock().expect("Threading Error"); // TODO: Continue + Info: command will be dropped
         let mut _iter = _handles.iter_mut();
 
         if let Some(hdl) = _iter.find( | hdl | hdl.invoke_id == invoke_id) {
             hdl.data.payload = Some(data);
             hdl.data.ams_err = err_code;
+        } else {
+            warn!("No corresponding invoke ID found in CMD register - response will expire");
         }
     }
 
