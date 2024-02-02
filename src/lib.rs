@@ -23,6 +23,8 @@
 //! 
 //! Checkout the [example section](https://github.com/hANSIc99/ads_client/tree/main/examples) in the repsoitory.
 
+#![allow(unused)]
+
 #[macro_use]
 mod misc;
 mod command_manager;
@@ -42,7 +44,7 @@ use std::net::SocketAddr;
 use std::mem::size_of_val;
 use std::sync::{Arc, Mutex, atomic::{AtomicU16, Ordering}};
 use tokio::net::TcpStream;
-use tokio::runtime;
+use tokio::{runtime, stream};
 use tokio::io::{ReadHalf, WriteHalf};
 use tokio::io::{AsyncWriteExt, AsyncReadExt};
 use log::{trace, debug, info, warn, error};
@@ -429,10 +431,10 @@ impl Client {
     }
 
     fn eval_return_code(answer: &[u8]) -> Result<u32> {
-        let ret_code = u32::from_ne_bytes(answer[0..4].try_into().unwrap());
+        let ret_code = u32::from_ne_bytes(answer[0..4].try_into()?);
 
         if ret_code != 0 {
-            return Err(AdsError{ n_error : ret_code, s_msg : String::from("Errorcode of ADS response") }); // TODO
+            return Err(AdsError{ n_error : ret_code, s_msg : String::from("Errorcode of ADS response") }); // TODO Add text to error codes
         } else {
             Ok(ret_code)
         }
@@ -476,25 +478,49 @@ impl Client {
 
     async fn process_command(err_code: u32, invoke_id: u32, cmd_register: Arc<Mutex<Vec<Handle>>>, data: Bytes){
         trace!("Start processing response: invoke ID: {}", invoke_id);
-        let mut _handles = cmd_register.lock().expect("Threading Error"); // TODO: Continue + Info: command will be dropped
-        let mut _iter = _handles.iter_mut();
 
-        if let Some(hdl) = _iter.find( | hdl | hdl.invoke_id == invoke_id) {
-            hdl.data.payload = Some(data);
-            hdl.data.ams_err = err_code;
-        } else {
-            warn!("No corresponding invoke ID found in CMD register - response will expire");
-        }
+        match cmd_register.lock() {
+            Ok(mut h) => {
+
+                if let Some(hdl) =  h.iter_mut().find( | hdl | hdl.invoke_id == invoke_id) {
+                    hdl.data.payload = Some(data);
+                    hdl.data.ams_err = err_code;
+                } else {
+                    warn!("No corresponding invoke ID found in CMD register - response will expire");
+                }
+
+            },
+            Err(e) => {
+                error!("Failed to lock command register - response dropped");
+                return;
+            }
+        };
     }
 
     async fn process_device_notification(not_register: Arc<Mutex<Vec<NotHandle>>>, data: Bytes){
-        let stream_size = Client::not_extract_length(&data).unwrap();
-        let stamps      = Client::not_extract_stamps(&data).unwrap();
+
+        let stream_size = match Client::not_extract_length(&data){
+            Ok(size) => size,
+            Err(e) => {
+                error!("Failed to extract notification length - Notification dropped - {:?}", e);
+                return;
+            }
+        };
+
+        let stamps = match Client::not_extract_stamps(&data){
+            Ok(stamps) => stamps,
+            Err(e) => {
+                error!("Failed to extract number of stamps- Notification dropped - {:?}", e);
+                return;
+            }
+        };
+
         let rt          = runtime::Handle::current();
         // Maximum stamp_header_offset == stream_size - sizeof(stamps)
         // ^= stream_size - 4
         let max_stamp_header_offset = stream_size + size_of_val(&stamps);
         let mut stamp_header_offset : usize = 8; // Start Idx
+
 
         for _ in 0..stamps { // Iterate over AdsStampHeader 
             // Return if there is not enough data
@@ -502,10 +528,19 @@ impl Client {
                 return;
             }
            
+            
             let stamp_header = AdsStampHeader {
-                timestamp : u64::from_ne_bytes(data[stamp_header_offset.. stamp_header_offset + 8].try_into().unwrap()),
-                samples : u32::from_ne_bytes(data[stamp_header_offset + 8..stamp_header_offset + 12].try_into().unwrap())
+                timestamp : u64::from_ne_bytes(data[stamp_header_offset.. stamp_header_offset + 8]
+                                                .try_into()
+                                                .unwrap_or_default()),
+
+                samples : u32::from_ne_bytes(data[stamp_header_offset + 8..stamp_header_offset + 12]
+                                                .try_into()
+                                                .unwrap_or_default())
             };
+
+            // TODO: Compare AdsStampHeadder for its default value
+            // If default, then continue with warning
 
             // Increase stamp header offset, move it to first AdsNotificaionSample (+= 12 byte)
             stamp_header_offset += LEN_STAMP_HEADER_MIN;

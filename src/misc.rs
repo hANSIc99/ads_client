@@ -141,6 +141,7 @@ pub struct AdsNotificationAttrib {
 }
 
 #[derive(Debug)]
+#[derive(Default)]
 pub struct AdsStampHeader {
     pub timestamp   : u64,
     pub samples     : u32
