@@ -142,12 +142,17 @@ pub struct AdsNotificationAttrib {
 
 #[derive(Debug)]
 #[derive(Default)]
+#[derive(PartialEq)]
+#[derive(Eq)]
 pub struct AdsStampHeader {
     pub timestamp   : u64,
     pub samples     : u32
 }
 
 #[derive(Debug)]
+#[derive(Default)]
+#[derive(PartialEq)]
+#[derive(Eq)]
 pub struct AdsNotificationSample {
     pub not_hdl     : u32,
     pub sample_size : u32

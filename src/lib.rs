@@ -65,8 +65,8 @@ const LEN_READ_REQ          : usize = 12;
 const LEN_RW_REQ_MIN        : usize = 16;
 const LEN_W_REQ_MIN         : usize = 12;
 const LEN_ADD_DEV_NOT       : usize = 38;
-const LEN_STAMP_HEADER_MIN  : usize = 12;
-const LEN_NOT_SAMPLE_MIN    : usize = 8;
+const LEN_STAMP_HEADER_MIN  : usize = 12;   // Time Stamp [8] + No Samples [4]
+const LEN_NOT_SAMPLE_MIN    : usize = 8;    // Notification Handle [4] + Sample Size [4]
 const LEN_DEL_DEV_NOT       : usize = 4;
 const LEN_WR_CTRL_MIN       : usize = 8;
 
@@ -499,7 +499,7 @@ impl Client {
 
     async fn process_device_notification(not_register: Arc<Mutex<Vec<NotHandle>>>, data: Bytes){
 
-        let stream_size = match Client::not_extract_length(&data){
+        let stream_length = match Client::not_extract_length(&data){
             Ok(size) => size,
             Err(e) => {
                 error!("Failed to extract notification length - Notification dropped - {:?}", e);
@@ -507,7 +507,7 @@ impl Client {
             }
         };
 
-        let stamps = match Client::not_extract_stamps(&data){
+        let no_stamps = match Client::not_extract_stamps(&data){
             Ok(stamps) => stamps,
             Err(e) => {
                 error!("Failed to extract number of stamps- Notification dropped - {:?}", e);
@@ -518,14 +518,17 @@ impl Client {
         let rt          = runtime::Handle::current();
         // Maximum stamp_header_offset == stream_size - sizeof(stamps)
         // ^= stream_size - 4
-        let max_stamp_header_offset = stream_size + size_of_val(&stamps);
-        let mut stamp_header_offset : usize = 8; // Start Idx
+        
+        // Calculate the last byte index of the AdsNotificaionStream (Length, Samples + AdsStampHeader)
+        let max_stamp_header_offset = stream_length + size_of_val(&no_stamps); 
+        let mut stamp_header_offset : usize = 8; // Start index of AdsNotificationStream
 
 
-        for _ in 0..stamps { // Iterate over AdsStampHeader 
-            // Return if there is not enough data
+        for _ in 0..no_stamps { // Iterate over AdsStampHeader 
+            // Return if there is no data beside of the AdsStampHeader consisting of time stamp [8] and no samples [4]
             if (stamp_header_offset + LEN_STAMP_HEADER_MIN) > max_stamp_header_offset {
-                return;
+                info!("Received Device Notification without sample data");
+                continue;
             }
            
             
@@ -539,8 +542,10 @@ impl Client {
                                                 .unwrap_or_default())
             };
 
-            // TODO: Compare AdsStampHeadder for its default value
-            // If default, then continue with warning
+            if (stamp_header == AdsStampHeader::default()){
+                info!("Empty AdsStampHeader - Continue with next stamp");
+                continue;
+            }
 
             // Increase stamp header offset, move it to first AdsNotificaionSample (+= 12 byte)
             stamp_header_offset += LEN_STAMP_HEADER_MIN;
@@ -549,17 +554,29 @@ impl Client {
             for _ in 0..stamp_header.samples {
                 // Return if there is not enough data
                 if (stamp_header_offset + LEN_NOT_SAMPLE_MIN) > max_stamp_header_offset {
+                    info!("[A] Not enough data in available in stream");
                     return;
                 }
 
                 let not_sample = AdsNotificationSample {
-                    not_hdl : u32::from_ne_bytes(data[stamp_header_offset..stamp_header_offset + 4].try_into().unwrap()),
-                    sample_size : u32::from_ne_bytes(data[stamp_header_offset + 4 ..stamp_header_offset + 8].try_into().unwrap())
+                    not_hdl : u32::from_ne_bytes(data[stamp_header_offset..stamp_header_offset + 4]
+                                                        .try_into()
+                                                        .unwrap_or_default()),
+
+                    sample_size : u32::from_ne_bytes(data[stamp_header_offset + 4 ..stamp_header_offset + 8]
+                                                        .try_into()
+                                                        .unwrap_or_default())
                 };
 
+                if (not_sample == AdsNotificationSample::default()){
+                    info!("No data in AdsNotificationSample - skip");
+                    continue;
+                }
+                
                 stamp_header_offset += LEN_NOT_SAMPLE_MIN;
 
                 if (stamp_header_offset + not_sample.sample_size as usize) > max_stamp_header_offset {
+                    info!("[B] Not enough data in available in stream");
                     return;
                 }
 
