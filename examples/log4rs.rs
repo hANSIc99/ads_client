@@ -47,8 +47,16 @@ async fn main() -> Result<()> {
 
     //read_symbol(&ads_client).await;
     device_notofication(&ads_client).await;
+    //read_state(&ads_client).await;
 
     Ok(())
+}
+
+async fn read_state(ads_client: &Client){
+    match ads_client.read_state().await {
+        Ok(state) => println!("State: {:?}", state),
+        Err(err) => println!("Error: {}", err.to_string())
+    }
 }
 
 async fn device_notofication(ads_client: &Client){

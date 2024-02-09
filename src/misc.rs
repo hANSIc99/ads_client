@@ -207,6 +207,7 @@ pub struct DeviceStateInfo {
 #[allow(dead_code)]
 #[derive(Debug)]
 pub enum AdsCommand {
+    Invalid = 0,
     ReadDeviceInfo = 1,
     Read = 2,
     Write = 3,
@@ -216,6 +217,10 @@ pub enum AdsCommand {
     DeleteDeviceNotification = 7,
     DeviceNotification = 8,
     ReadWrite = 9
+}
+
+impl Default for AdsCommand {
+    fn default() -> Self { AdsCommand::Invalid }
 }
 
 impl TryFrom<u16> for AdsCommand{

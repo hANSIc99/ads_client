@@ -159,8 +159,8 @@ impl Client {
         
         let mut state = ProcessStateMachine::ReadHeader;
         let rt = runtime::Handle::current();
+        
         loop {
-
             match &mut state {
 
                 ProcessStateMachine::ReadHeader => {
@@ -172,20 +172,25 @@ impl Client {
                            warn!("Zero Bytes read");
                         }
                         Ok(_) => {
-                            let len_payload = Client::extract_length(&header_buf).unwrap();
-                            let err_code = Client::extract_error_code(&header_buf).unwrap();
-                            let invoke_id   = Client::extract_invoke_id(&header_buf).unwrap();
-                            let ads_cmd     = Client::extract_cmd_tyte(&header_buf).unwrap();
-                            // Create buffer of size payload
+                            let len_payload = Client::extract_length(&header_buf).unwrap_or_default();
+                            let err_code = Client::extract_error_code(&header_buf).unwrap_or_default();
+                            let invoke_id   = Client::extract_invoke_id(&header_buf).unwrap_or_default();
+                            let ads_cmd     = Client::extract_cmd_tyte(&header_buf).unwrap_or_default();
+
+                            if(len_payload == 0){
+                                warn!("No ADS payload available - skip");
+                                continue;
+                            }
+
                             trace!("Received payload: {:?} byte", len_payload);
-                            //if len_payload > 0 {
+
                             state = ProcessStateMachine::ReadPayload{
                                 len_payload : len_payload,
                                 err_code    : err_code,
                                 invoke_id   : invoke_id,
                                 cmd         : ads_cmd
                             };
-                            //}
+
                         }
                         Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
                             warn!("TcpStream: false positive reaction / stream was not yet ready for reading{:?}", e);
@@ -462,7 +467,7 @@ impl Client {
     fn extract_length(answer: &[u8]) -> Result<usize>{
         // length in AMS-Header https://infosys.beckhoff.com/content/1031/tc3_ads_intro/115847307.html
         let tmp = u32::from_ne_bytes(answer[HEADER_SIZE-12..HEADER_SIZE-8].try_into()?);
-        // Err(Box::new(AdsError{n_error : 1212})) // DEBUG
+        //Err(AdsError{s_msg: String::from("test"),  n_error : 1212}) // DEBUG
         Ok(usize::try_from(tmp)?)
     }
 
@@ -572,7 +577,7 @@ impl Client {
                     info!("No data in AdsNotificationSample - skip");
                     continue;
                 }
-                
+
                 stamp_header_offset += LEN_NOT_SAMPLE_MIN;
 
                 if (stamp_header_offset + not_sample.sample_size as usize) > max_stamp_header_offset {
