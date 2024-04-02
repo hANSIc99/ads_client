@@ -301,7 +301,7 @@ impl Client {
         let mut answer : [u8; 14] = [0; 14];
 
         let _stream = Client::connect(&mut answer).await?;
-        info!("ADS client port opened: {}", u16::from_ne_bytes(answer[12..14].try_into().unwrap()));
+        info!("ADS client port opened: {}", u16::from_ne_bytes(answer[12..14].try_into().unwrap_or_default()));
 
         // Split the stream into a read and write part
         //
