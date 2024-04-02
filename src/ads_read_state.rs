@@ -17,7 +17,7 @@ impl Client {
 
             Client::eval_return_code(&payload.slice(0..4))?;
 
-            let stateInfo = StateInfo{
+            let state_info = StateInfo{
                 ads_state       : u16::from_ne_bytes(payload.slice(4..6)[..].try_into().unwrap_or_default()).try_into()?,
                 device_state    : u16::from_ne_bytes(payload.slice(6..8)[..].try_into().unwrap_or_default())
             };
