@@ -1,5 +1,5 @@
 use bytes::{Bytes, BytesMut};
-use crate::{Client, Result, AdsCommand, StateInfo, HEADER_SIZE, LEN_WR_CTRL_MIN, misc::HandleData};
+use crate::{Client, Result, AdsCommand, AdsError, AdsErrorCode, StateInfo, HEADER_SIZE, LEN_WR_CTRL_MIN, misc::HandleData};
 
 impl Client {
 
@@ -32,7 +32,11 @@ impl Client {
 
     fn post_write_ctrl(wr_ctrl_response : HandleData) -> Result<()>{
         Client::eval_ams_error(wr_ctrl_response.ams_err)?;
-        Client::eval_return_code(wr_ctrl_response.payload.unwrap().as_ref())?;
+        
+        let payload = wr_ctrl_response.payload
+                    .ok_or_else(|| AdsError{n_error : AdsErrorCode::ADSERR_DEVICE_INVALIDDATA.into(), s_msg : String::from("Invalid data values.")})?;
+
+        Client::eval_return_code(payload.as_ref())?;
         Ok(())
     }
 
