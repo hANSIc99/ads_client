@@ -54,7 +54,7 @@ use command_cleaner::CommandCleaner;
 use command_manager::CommandManager;
 
 use misc::{AdsCommand, Handle, HandleData, NotHandle, AmsNetId, AdsStampHeader, AdsNotificationSample};
-pub use misc::{AdsTimeout, AdsNotificationAttrib, AdsTransMode, StateInfo, DeviceStateInfo, AdsState, Notification, Result, AdsError}; // Re-export type
+pub use misc::{AdsTimeout, AdsNotificationAttrib, AdsTransMode, StateInfo, DeviceStateInfo, AdsState, Notification, Result, AdsError, AdsErrorCode}; // Re-export type
 
 
 /// Size of the AMS/TCP + ADS headers
