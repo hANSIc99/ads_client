@@ -187,7 +187,9 @@ pub enum AdsTimeout {
 }
 
 /// ADS State and device state of a target system.
+#[derive(Default)]
 #[derive(Debug)]
+#[derive(PartialEq)]
 pub struct StateInfo {
     pub ads_state    : AdsState,
     pub device_state : u16
@@ -245,6 +247,7 @@ impl TryFrom<u16> for AdsCommand{
 
 #[derive(Copy, Clone)]
 #[allow(dead_code)]
+#[derive(PartialEq)]
 #[derive(Debug)]
 /// ADS State of target system.
 /// 
@@ -270,6 +273,10 @@ pub enum AdsState {
     Resume          = 14,
     Config          = 15, // system is in config mode
     Reconfig        = 16, // system should restart in config mode
+}
+
+impl Default for AdsState {
+    fn default() -> Self { AdsState::Invalid }
 }
 
 impl TryFrom<u16> for AdsState {

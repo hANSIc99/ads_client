@@ -1,25 +1,33 @@
-use crate::{AdsError, Client, Result, AdsCommand, StateInfo, HandleData};
+use crate::{AdsError, AdsErrorCode, Client, Result, AdsCommand, StateInfo, HandleData};
 
 impl Client {
 
     fn post_read_state(rs_response : HandleData) -> Result<StateInfo> {
 
-        let payload = rs_response.payload.unwrap();
+        let payload = rs_response.payload
+                    .ok_or_else(|| AdsError{n_error : AdsErrorCode::ADSERR_DEVICE_INVALIDDATA.into(), s_msg : String::from("Invalid data values.")})?;
         //let mut b_respone : [u8; 4] = payload.slice(0..4)[..].try_into().unwrap(); // TODO: Debug only
         
         Client::eval_ams_error(rs_response.ams_err)?;
         Client::eval_return_code(&payload.slice(0..4))?;
 
          if payload.len() != 8 {
-            return Err(AdsError{n_error : 0xE, s_msg : String::from("Invalid AMS length") });
+            return Err(AdsError{n_error : AdsErrorCode::ERR_INVALIDAMSLENGTH.into(), s_msg : String::from("Invalid AMS length") });
         } else {
 
             Client::eval_return_code(&payload.slice(0..4))?;
 
-            Ok(StateInfo{
-                ads_state       : u16::from_ne_bytes(payload.slice(4..6)[..].try_into().unwrap()).try_into()?,
-                device_state    : u16::from_ne_bytes(payload.slice(6..8)[..].try_into().unwrap())
-            })
+            let stateInfo = StateInfo{
+                ads_state       : u16::from_ne_bytes(payload.slice(4..6)[..].try_into().unwrap_or_default()).try_into()?,
+                device_state    : u16::from_ne_bytes(payload.slice(6..8)[..].try_into().unwrap_or_default())
+            };
+
+
+            if (stateInfo == StateInfo::default()){
+                return Err(AdsError{n_error : AdsErrorCode::ERR_INTERNAL.into(), s_msg : String::from("Internal error - conversion of payload failed.")});
+            }
+
+            Ok(stateInfo)
         }
 
     }
