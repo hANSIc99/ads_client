@@ -1,12 +1,13 @@
 use bytes::Buf;
 use std::io::Read;
-use crate::{AdsError, Client, Result, AdsCommand, DeviceStateInfo, misc::HandleData};
+use crate::{AdsError, AdsErrorCode, Client, Result, AdsCommand, DeviceStateInfo, misc::HandleData};
 
 impl Client {
 
     fn post_read_device_info(rd_dinfo_response : HandleData) -> Result<DeviceStateInfo> {
 
-        let payload = rd_dinfo_response.payload.unwrap();
+        let payload = rd_dinfo_response.payload
+                        .ok_or_else(|| AdsError{n_error : AdsErrorCode::ADSERR_DEVICE_INVALIDDATA.into(), s_msg : String::from("Invalid data values.")})?;
 
         Client::eval_ams_error(rd_dinfo_response.ams_err)?;
 
@@ -19,11 +20,10 @@ impl Client {
             let mut s_device_name = String::new();
             payload.slice(8..24)[..].reader().read_to_string(&mut s_device_name)?;
 
-
             Ok(DeviceStateInfo{
-                major       : u8::from_ne_bytes(payload.slice(4..5)[..].try_into().unwrap()),
-                minor       : u8::from_ne_bytes(payload.slice(5..6)[..].try_into().unwrap()),
-                build       : u16::from_ne_bytes(payload.slice(6..8)[..].try_into().unwrap()),
+                major       : u8::from_ne_bytes(payload.slice(4..5)[..].try_into().unwrap_or_default()),
+                minor       : u8::from_ne_bytes(payload.slice(5..6)[..].try_into().unwrap_or_default()),
+                build       : u16::from_ne_bytes(payload.slice(6..8)[..].try_into().unwrap_or_default()),
                 device_name : s_device_name
             })
         }
