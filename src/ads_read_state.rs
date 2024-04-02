@@ -23,11 +23,11 @@ impl Client {
             };
 
 
-            if (stateInfo == StateInfo::default()){
+            if (state_info == StateInfo::default()){
                 return Err(AdsError{n_error : AdsErrorCode::ERR_INTERNAL.into(), s_msg : String::from("Internal error - conversion of payload failed.")});
             }
 
-            Ok(stateInfo)
+            Ok(state_info)
         }
 
     }
