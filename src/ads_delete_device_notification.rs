@@ -1,5 +1,6 @@
 use bytes::{Bytes, BytesMut};
-use crate::{Client, AdsCommand, HEADER_SIZE, LEN_DEL_DEV_NOT, Result, misc::HandleData};
+use crate::{Client, AdsCommand, AdsError, AdsErrorCode, HEADER_SIZE, LEN_DEL_DEV_NOT, Result, misc::HandleData};
+use log::{trace, debug, info, warn, error};
 
 impl Client {
 
@@ -24,7 +25,11 @@ impl Client {
 
     fn post_delete_device_notification(del_not_response : HandleData) -> Result<()>{
         Client::eval_ams_error(del_not_response.ams_err)?;
-        Client::eval_return_code(del_not_response.payload.unwrap().as_ref())?;
+
+        del_not_response.payload
+            .map(|p| Client::eval_return_code(p.as_ref()))
+            .ok_or_else(|| AdsError{n_error : AdsErrorCode::ADSERR_DEVICE_INVALIDDATA.into(), s_msg : String::from("Invalid data values")})??;
+
         Ok(())
     }
 
