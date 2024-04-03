@@ -439,7 +439,7 @@ impl Client {
         let ret_code = u32::from_ne_bytes(answer[0..4].try_into()?);
 
         if ret_code != 0 {
-            return Err(AdsError{ n_error : ret_code, s_msg : String::from("Errorcode of ADS response") }); // TODO Add text to error codes
+            Err(AdsError{ n_error : ret_code, s_msg : String::from("Errorcode of ADS response") }) // TODO Add text to error codes
         } else {
             Ok(ret_code)
         }
