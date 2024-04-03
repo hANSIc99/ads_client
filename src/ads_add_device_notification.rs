@@ -1,6 +1,6 @@
 use std::sync::{Arc, Mutex};
 use bytes::{Bytes, BytesMut};
-use crate::{Client, AdsCommand, Notification, AdsNotificationAttrib, HEADER_SIZE, LEN_ADD_DEV_NOT, Result, misc::HandleData};
+use crate::{Client, AdsCommand, AdsError, AdsErrorCode, Notification, AdsNotificationAttrib, HEADER_SIZE, LEN_ADD_DEV_NOT, Result, misc::HandleData};
 
 impl Client {
 
@@ -26,11 +26,13 @@ impl Client {
     }
 
     fn post_add_dev_not(&self, add_dev_not_response : HandleData, handle: &mut u32, callback : Notification, user_data: Option<&Arc<Mutex<BytesMut>>>) -> Result<()>{
-        
-        let payload = add_dev_not_response.payload.unwrap();
+
+        let payload = add_dev_not_response.payload
+                        .ok_or_else(|| AdsError{n_error : AdsErrorCode::ADSERR_DEVICE_INVALIDDATA.into(), s_msg : String::from("Invalid data values.")})?;
 
         Client::eval_ams_error(add_dev_not_response.ams_err)?;
         Client::eval_return_code(payload.as_ref())?;
+
 
         *handle = u32::from_ne_bytes(payload[4..8].try_into()?);
 
