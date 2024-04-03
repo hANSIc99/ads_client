@@ -46,10 +46,10 @@ impl Future for CommandManager {
             });
 
             match pos {
-                Some(_pos) => {
+                Some(position) => {
                     //
-                    let hdl = handles.swap_remove(pos.unwrap());
-                    return Poll::Ready(Ok(hdl.data)) // TODO: remove unwrap
+                    let hdl = handles.swap_remove(position);
+                    return Poll::Ready(Ok(hdl.data))
                 },
                 None => {
                     cx.waker().wake_by_ref();
