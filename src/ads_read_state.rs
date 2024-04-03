@@ -6,10 +6,8 @@ impl Client {
 
         let payload = rs_response.payload
                     .ok_or_else(|| AdsError{n_error : AdsErrorCode::ADSERR_DEVICE_INVALIDDATA.into(), s_msg : String::from("Invalid data values.")})?;
-        //let mut b_respone : [u8; 4] = payload.slice(0..4)[..].try_into().unwrap(); // TODO: Debug only
         
         Client::eval_ams_error(rs_response.ams_err)?;
-        Client::eval_return_code(&payload.slice(0..4))?;
 
          if payload.len() != 8 {
             return Err(AdsError{n_error : AdsErrorCode::ERR_INVALIDAMSLENGTH.into(), s_msg : String::from("Invalid AMS length") });

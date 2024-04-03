@@ -28,9 +28,9 @@ impl Client {
 
         Client::eval_ams_error(w_response.ams_err)?;
 
-        let payload = w_response.payload
-                        .ok_or_else(|| AdsError{n_error : AdsErrorCode::ADSERR_DEVICE_INVALIDDATA.into(), s_msg : String::from("Invalid data values.")})?;
-        Client::eval_return_code(payload.as_ref())?;
+        w_response.payload
+                    .map(|p| Client::eval_return_code(p.as_ref()))
+                    .ok_or_else(|| AdsError{n_error : AdsErrorCode::ADSERR_DEVICE_INVALIDDATA.into(), s_msg : String::from("Invalid data values")})??;
         Ok(())
     }
     /// Submit an asynchronous [ADS Write](https://infosys.beckhoff.com/content/1033/tc3_ads_intro/115877899.html) request.

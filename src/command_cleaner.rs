@@ -45,7 +45,7 @@ impl Future for CommandCleaner {
 
         thread::spawn(move || {
 
-            thread::sleep(Duration::from_secs(interval)); // Checke every second for stale handles
+            thread::sleep(Duration::from_secs(interval)); // Check every second for stale handles
             let waker = waker.lock().unwrap();
             waker.wake_by_ref();
         });
