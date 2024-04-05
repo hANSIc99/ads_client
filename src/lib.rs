@@ -137,16 +137,16 @@ impl Client {
                         info!("Connection to AMS router established");
                         break;
                     } else {
+                        error!("Router port disabled – TwinCAT system service not started.");
                         return Err(AdsError{n_error : 18, s_msg : String::from("Port disabled – TwinCAT system service not started.")});
                     }
                 }
-
                 Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
                     warn!("TcpStream: false positive reaction / stream was not yet ready for writing {:?}", e);
                     continue;
                 }
-                
                 Err(_) => {
+                    error!("Router port disabled – TwinCAT system service not started.");
                     return Err(AdsError{n_error : 18, s_msg : String::from("Port disabled – TwinCAT system service not started.")});
                 }
             }
@@ -164,12 +164,12 @@ impl Client {
             match &mut state {
 
                 ProcessStateMachine::ReadHeader => {
-                    trace!("Start reading AMS/ADS header");
+
                     let mut header_buf : [u8; HEADER_SIZE] = [0; HEADER_SIZE];
 
                     match rd_stream.read(&mut header_buf).await {
                         Ok(0) => {
-                           warn!("Zero Bytes read");
+                           warn!("[0] Incoming ADS command - no bytes to read");
                         }
                         Ok(_) => {
                             let len_payload = Client::extract_length(&header_buf).unwrap_or_default();
@@ -178,11 +178,11 @@ impl Client {
                             let ads_cmd     = Client::extract_cmd_tyte(&header_buf).unwrap_or_default();
 
                             if(len_payload == 0){
-                                warn!("No ADS payload available - skip");
+                                warn!("Invoke id {}: No ADS payload available - skip", invoke_id);
                                 continue;
                             }
 
-                            trace!("Received payload: {:?} byte", len_payload);
+                            trace!("[0] Incoming ADS command with {:?} byte payload", len_payload);
 
                             state = ProcessStateMachine::ReadPayload{
                                 len_payload : len_payload,
@@ -198,19 +198,18 @@ impl Client {
                         }
                         Err(e) => {
                             error!("Socket Error (0x1): {:?}", e);
-                            panic!("Socket Error (0x1): {:?}", e);
+                            //panic!("Socket Error (0x1): {:?}", e);
                         }
                     }
                 }
                 
                 ProcessStateMachine::ReadPayload {len_payload, err_code, invoke_id, cmd} => {
                     
-                    //trace!("Start reading payload");
                     let mut payload = BytesMut::with_capacity(*len_payload);
 
                     match rd_stream.read_buf(&mut payload).await {
                         Ok(0) => {
-                            info!("ADS command {:?}, invoke ID: {:?}: - zero payload", cmd, invoke_id);
+                            info!("[1] ADS command {:?}, invoke ID: {:?}: - zero payload", cmd, invoke_id);
                             state = ProcessStateMachine::ReadHeader;
                         }
                         Ok(_) => {
@@ -218,11 +217,13 @@ impl Client {
                             let buf = payload.freeze(); // Convert to Bytes
                             match cmd {
                                 AdsCommand::DeviceNotification => {
+                                    trace!("[1] Processing device notification");
                                     let _not_handles = Arc::clone(&not_handles); 
                                     rt.spawn(Client::process_device_notification(_not_handles, buf));
 
                                 },
                                 _ => {
+                                    trace!("[1] Processing ADS response");
                                     let _handles = Arc::clone(&handles);
                                     rt.spawn(Client::process_command(*err_code, *invoke_id, _handles, buf));
                                 }
@@ -237,7 +238,7 @@ impl Client {
                         }
                         Err(e) => {
                             error!("ADS command {:?}, invoke ID: {:?}: - Error occurred: {:?}", cmd, invoke_id, e);
-                            panic!("Socket Error (0x1): {:?}", e);
+                            //panic!("Socket Error (0x1): {:?}", e);
                         }
                     } // match
                 }
@@ -482,7 +483,7 @@ impl Client {
     }
 
     async fn process_command(err_code: u32, invoke_id: u32, cmd_register: Arc<Mutex<Vec<Handle>>>, data: Bytes){
-        trace!("Start processing response: invoke ID: {}", invoke_id);
+        trace!("[2] AdsCmd: invoke ID: {}", invoke_id);
 
         match cmd_register.lock() {
             Ok(mut h) => {
@@ -503,7 +504,7 @@ impl Client {
     }
 
     async fn process_device_notification(not_register: Arc<Mutex<Vec<NotHandle>>>, data: Bytes){
-
+        trace!("[2] Start processing AdsDeviceNotification");
         let stream_length = match Client::not_extract_length(&data){
             Ok(size) => size,
             Err(e) => {

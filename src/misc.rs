@@ -169,7 +169,7 @@ pub struct Handle {
     pub cmd_type  : AdsCommand,
     pub invoke_id : u32,
     pub data      : HandleData,
-    pub timestamp : Instant,
+    pub timestamp : Instant, // Timestamp of creation
 }
 
 pub struct NotHandle {

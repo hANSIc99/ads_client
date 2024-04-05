@@ -32,7 +32,7 @@ async fn main() -> Result<()> {
                 Err(err) => println!("Read failed: {}", err.to_string())
             }
     
-            thread::sleep(Duration::from_millis(500));
+            thread::sleep(Duration::from_millis(1000));
      
         }
 

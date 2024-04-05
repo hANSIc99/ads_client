@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 use bytes::{Bytes, BytesMut, BufMut};
-use log::LevelFilter;
+use log::{trace, info, warn, error};
 use log4rs::filter::threshold::ThresholdFilter;
 use log4rs::append::console::ConsoleAppender;
 use log4rs::append::file::FileAppender;
@@ -16,27 +16,33 @@ async fn main() -> Result<()> {
 
     // Define appender "stderr"
     let stderr = ConsoleAppender::builder()
-        .encoder(Box::new(PatternEncoder::new("{d:<35.35} - {l} - {f}:{L}- {m}{n}")))
+        // https://github.com/estk/log4rs/blob/main/src/encode/pattern/mod.rs
+        // https://docs.rs/chrono/latest/chrono/format/strftime/
+        //.encoder(Box::new(PatternEncoder::new("{d:<35.35} - {l} - {f}:{L}- {m}{n}")))
+        .encoder(Box::new(PatternEncoder::new("{d(%Y-%m-%d %H:%M:%S%.3f)} - {l} - {f}:{L}- {m}{n}")))
         .build();
     
     // Define appender "logfile"
     let logfile = FileAppender::builder()
-        .encoder(Box::new(PatternEncoder::new("{d} - {l} - {f}:{L}- {m}{n}")))
+        .encoder(Box::new(PatternEncoder::new("{d(%Y-%m-%d %H:%M:%S%.3f)} - {l} - {f}:{L}- {m}{n}")))
         .build("log/requests.log")
         .unwrap();
 
     let config = Config::builder()
-        .appender(Appender::builder().build("logfile", Box::new(logfile)))
         .appender(
             Appender::builder()
                 .filter(Box::new(ThresholdFilter::new(log::LevelFilter::Info)))
+                .build("logfile", Box::new(logfile)))
+        .appender(
+            Appender::builder()
+                .filter(Box::new(ThresholdFilter::new(log::LevelFilter::Trace)))
                 .build("stderr", Box::new(stderr)),
         )
         .build(
             Root::builder()
                 .appender("logfile")
                 .appender("stderr")
-                .build(LevelFilter::Trace),
+                .build(log::LevelFilter::Trace),
         )
         .unwrap();
 
@@ -44,9 +50,9 @@ async fn main() -> Result<()> {
     let _handle = log4rs::init_config(config).unwrap();
 
     let ads_client = Client::new("5.80.201.232.1.1", 851, AdsTimeout::DefaultTimeout).await?;
-
-    //read_symbol(&ads_client).await;
-    device_notofication(&ads_client).await;
+    trace!("RTEAEASDEASDFSDA");
+    read_symbol_inf(&ads_client).await;
+    //device_notofication(&ads_client).await;
     //read_state(&ads_client).await;
 
     Ok(())
@@ -282,31 +288,35 @@ fn notification_c(_handle: u32, _timestamp: u64, payload: Bytes, user_data: Opti
     }
 }
 
-async fn read_symbol(ads_client: &Client){
+async fn read_symbol_inf(ads_client: &Client){
         // Get symbol handle
         let mut hdl : [u8; 4] = [0; 4];
         let symbol = b"MAIN.n_cnt_a";
     
         if let Err(err) = ads_client.read_write(0xF003, 0, &mut hdl, symbol).await{
-            println!("Error: {}", err.to_string());
+            error!("Error: {}", err.to_string());
         }
     
         let n_hdl = u32::from_ne_bytes(hdl.try_into().unwrap());
     
         if n_hdl != 0 {
-            println!("Got handle!");
+            info!("Got handle: {}", n_hdl);
     
             let mut plc_n_cnt_a : [u8; 2] = [0; 2];
-            
     
-            let read_hdl = ads_client.read(0xF005, n_hdl, &mut plc_n_cnt_a).await;
+            loop {
+                let read_hdl = ads_client.read(0xF005, n_hdl, &mut plc_n_cnt_a).await;
     
-            match read_hdl {
-                Ok(_bytes_read)     => {
-                    let n_cnt_a = u16::from_ne_bytes(plc_n_cnt_a.try_into().unwrap());
-                    println!("MAIN.n_cnt_a: {}", n_cnt_a);
-                },
-                Err(err) => println!("Read failed: {}", err.to_string())
+                match read_hdl {
+                    Ok(_bytes_read)     => {
+                        let n_cnt_a = u16::from_ne_bytes(plc_n_cnt_a.try_into().unwrap());
+                        info!("MAIN.n_cnt_a: {}", n_cnt_a);
+                    },
+                    Err(err) => println!("Read failed: {}", err.to_string())
+                }
+        
+                thread::sleep(Duration::from_millis(1000));
+         
             }
         }
 }

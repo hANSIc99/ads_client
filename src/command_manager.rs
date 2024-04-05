@@ -3,7 +3,7 @@ use std::future::Future;
 use std::task::{Context, Poll};
 use std::sync::{Arc, Mutex};
 use std::pin::Pin;
-use log::{warn};
+use log::{trace, warn};
 use crate::{AdsError, Result, Handle, HandleData};
 
 pub const ADSERR_CLIENT_SYNCTIMEOUT : u32 = 0x745;
@@ -12,7 +12,7 @@ pub struct CommandManager{
     now             : Instant,
     timeout         : u64,
     invoke_id       : u32,
-    handle_register : Arc<Mutex<Vec<Handle>>>
+    handle_register : Arc<Mutex<Vec<Handle>>>,
 }
 
 impl CommandManager {
@@ -33,7 +33,7 @@ impl Future for CommandManager {
         if self.now.elapsed().as_secs() > self.timeout{
             // Does this still work if the future is moved between threads/cores?
             // https://doc.rust-lang.org/std/time/struct.Instant.html
-            warn!("Command expired - invoke ID: {}", self.invoke_id);
+            warn!("Command expired (0x745) - invoke ID: {}", self.invoke_id);
             Poll::Ready(Err(AdsError{n_error : ADSERR_CLIENT_SYNCTIMEOUT, s_msg : String::from("Timeout has occurred – the target is not responding in the specified ADS timeout.")}))
         } else {
             let a_handles = Arc::clone(&self.handle_register);
@@ -41,14 +41,14 @@ impl Future for CommandManager {
             let mut handles = a_handles.lock().expect("Threading Error");
             let mut _iter = handles.iter_mut();
             let pos = _iter.position( | hdl | {
-                // Proceed when the invoke ID is match and data is attached
+                // Proceed when the invoke ID matches and data is attached
                 hdl.invoke_id == self.invoke_id && hdl.data.payload.is_some()
             });
-
+            
             match pos {
                 Some(position) => {
-                    //
                     let hdl = handles.swap_remove(position);
+                    trace!("[3] Handle found - processed after {:?} - AdsCmd: {:?} InvokeId: {}", (Instant::now() - hdl.timestamp), hdl.cmd_type, hdl.invoke_id);
                     return Poll::Ready(Ok(hdl.data))
                 },
                 None => {

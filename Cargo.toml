@@ -17,7 +17,7 @@ keywords = ["Beckhoff", "ADS", "automation", "device", "PLC"]
 [dependencies]
 tokio = { version =  "1.19.2", features = ["rt", "rt-multi-thread", "net", "io-util", "macros"] }
 bytes = "1.5.0"
-log = { version = "0.4.20", features = ["max_level_debug", "release_max_level_warn"]}
+log = { version = "0.4.20", features = ["max_level_trace", "release_max_level_warn"]}
 num_enum = "0.7.2"
 
 [dev-dependencies] 
