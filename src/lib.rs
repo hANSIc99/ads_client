@@ -79,6 +79,7 @@ enum ProcessStateMachine{
 /// 
 /// The client opens a port on the local ADS router in order to submit ADS requests.
 /// Use the [Client::new] method to create an instance.
+#[derive(Debug)]
 pub struct Client {
     _dst_addr       : AmsNetId,
     _dst_port       : u16,
@@ -94,6 +95,7 @@ pub struct Client {
 
 // TODO: Implement Defaul trait
 // https://doc.rust-lang.org/std/default/trait.Default.html
+
 
 impl Client {
    

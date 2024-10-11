@@ -160,11 +160,13 @@ pub struct AdsNotificationSample {
 }
 
 #[derive(Default)]
+#[derive(Debug)]
 pub struct HandleData {
     pub ams_err : u32,
     pub payload : Option<Bytes>
 }
 
+#[derive(Debug)]
 pub struct Handle {
     pub cmd_type  : AdsCommand,
     pub invoke_id : u32,
@@ -172,6 +174,7 @@ pub struct Handle {
     pub timestamp : Instant, // Timestamp of creation
 }
 
+#[derive(Debug)]
 pub struct NotHandle {
     pub callback  : Notification,
     pub not_hdl   : u32,
