@@ -22,9 +22,9 @@ async fn main() -> Result<()> {
         let mut plc_n_cnt_a : [u8; 2] = [0; 2];
         
         loop {
-            let read_hdl = ads_client.read(0xF005, n_hdl, &mut plc_n_cnt_a).await;
+            let rd_result = ads_client.read(0xF005, n_hdl, &mut plc_n_cnt_a).await;
 
-            match read_hdl {
+            match rd_result {
                 Ok(_bytes_read)     => {
                     let n_cnt_a = u16::from_ne_bytes(plc_n_cnt_a.try_into().unwrap());
                     println!("MAIN.n_cnt_a: {}", n_cnt_a);
