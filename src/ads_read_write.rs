@@ -1,4 +1,5 @@
 use bytes::{Bytes, BytesMut};
+use log::info;
 use crate::{Client, Result, AdsCommand, AdsError, AdsErrorCode, HEADER_SIZE, LEN_RW_REQ_MIN, misc::HandleData};
 
 impl Client{
@@ -78,6 +79,8 @@ impl Client{
         // Prepare ReadWrite request
         let invoke_id = self.create_invoke_id();
         let _rw_request = self.pre_read_write(idx_grp, idx_offs, read_data, write_data, invoke_id);
+        
+        info!("Submit RW Request: Invoke ID: {}, Read length: {}, Write length: {}", invoke_id, read_data.len(), write_data.len());
 
         // Create handle
         self.register_command_handle(invoke_id, AdsCommand::ReadWrite);

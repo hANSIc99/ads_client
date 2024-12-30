@@ -1,3 +1,4 @@
+use log::info;
 use crate::{AdsError, AdsErrorCode, Client, Result, AdsCommand, StateInfo, HandleData};
 
 impl Client {
@@ -56,6 +57,8 @@ impl Client {
         let invoke_id = self.create_invoke_id();
         let ams_header = self.c_init_ams_header(invoke_id, None, AdsCommand::ReadState);
         
+        info!("Submit Read State Request: Invoke ID: {}", invoke_id);
+
         // Create handle
         self.register_command_handle(invoke_id, AdsCommand::ReadState);
 

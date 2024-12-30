@@ -1,6 +1,6 @@
 use bytes::{Bytes, BytesMut};
+use log::info;
 use crate::{Client, Result, AdsCommand, AdsError, AdsErrorCode, StateInfo, HEADER_SIZE, LEN_WR_CTRL_MIN, misc::HandleData};
-use log::{trace, debug, info, warn, error};
 
 impl Client {
 
@@ -45,6 +45,8 @@ impl Client {
         // Prepare write control request
         let invoke_id = self.create_invoke_id();
         let _wr_ctr_request = self.pre_write_ctrl(state, data, invoke_id);
+
+        info!("Submit Write Control Request: Invoke ID: {}", invoke_id);
 
         // Create handle
         self.register_command_handle(invoke_id, AdsCommand::WriteControl);

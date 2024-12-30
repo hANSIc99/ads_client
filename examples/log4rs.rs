@@ -49,8 +49,8 @@ async fn main() -> Result<()> {
 
     let _handle = log4rs::init_config(config).unwrap();
 
-    let ads_client = Client::new("5.80.201.232.1.1", 851, AdsTimeout::DefaultTimeout).await?;
-    trace!("RTEAEASDEASDFSDA");
+    let ads_client = Client::new("172.17.56.160.1.1", 851, AdsTimeout::DefaultTimeout).await?;
+
     read_symbol_inf(&ads_client).await;
     //device_notofication(&ads_client).await;
     //read_state(&ads_client).await;

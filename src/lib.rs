@@ -171,7 +171,7 @@ impl Client {
 
                     match rd_stream.read(&mut header_buf).await {
                         Ok(0) => {
-                           warn!("[0] Incoming ADS command - no bytes to read");
+                           warn!("[0] Incoming ADS response - no bytes to read");
                         }
                         Ok(_) => {
                             let len_payload = Client::extract_length(&header_buf).unwrap_or_default();
@@ -184,7 +184,7 @@ impl Client {
                                 continue;
                             }
 
-                            trace!("[0] Incoming ADS command with {:?} byte payload", len_payload);
+                            trace!("[0] Incoming ADS response with {:?} byte payload", len_payload);
 
                             state = ProcessStateMachine::ReadPayload{
                                 len_payload : len_payload,
@@ -211,7 +211,7 @@ impl Client {
 
                     match rd_stream.read_buf(&mut payload).await {
                         Ok(0) => {
-                            info!("[1] ADS command {:?}, invoke ID: {:?}: - zero payload", cmd, invoke_id);
+                            info!("[1] ADS response {:?}, Invoke ID: {:?}: - zero payload", cmd, invoke_id);
                             state = ProcessStateMachine::ReadHeader;
                         }
                         Ok(_) => {
@@ -235,11 +235,11 @@ impl Client {
                             state = ProcessStateMachine::ReadHeader;
                         }
                         Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
-                            warn!("ADS command {:?}, invoke ID: {:?}: - WouldBlock error during reading occured", cmd, invoke_id);
+                            warn!("ADS command {:?}, Invoke ID: {:?}: - WouldBlock error during reading occured", cmd, invoke_id);
                             continue;
                         }
                         Err(e) => {
-                            error!("ADS command {:?}, invoke ID: {:?}: - Error occurred: {:?}", cmd, invoke_id, e);
+                            error!("ADS command {:?}, Invoke ID: {:?}: - Error occurred: {:?}", cmd, invoke_id, e);
                             //panic!("Socket Error (0x1): {:?}", e);
                         }
                     } // match
@@ -485,7 +485,7 @@ impl Client {
     }
 
     async fn process_command(err_code: u32, invoke_id: u32, cmd_register: Arc<Mutex<Vec<Handle>>>, data: Bytes){
-        trace!("[2] AdsCmd: invoke ID: {}", invoke_id);
+        trace!("[2] AdsCmd: Invoke ID: {}", invoke_id);
 
         match cmd_register.lock() {
             Ok(mut h) => {

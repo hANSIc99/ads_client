@@ -1,4 +1,5 @@
 use bytes::Buf;
+use log::info;
 use std::io::Read;
 use crate::{AdsError, AdsErrorCode, Client, Result, AdsCommand, DeviceStateInfo, misc::HandleData};
 
@@ -61,6 +62,8 @@ impl Client {
         // Prepare read device info request
         let invoke_id = self.create_invoke_id();
         let ams_header = self.c_init_ams_header(invoke_id, None, AdsCommand::ReadDeviceInfo);
+
+        info!("Submit Read Device Info: Invoke ID: {}", invoke_id);
 
         // Create handle
         self.register_command_handle(invoke_id, AdsCommand::ReadDeviceInfo);

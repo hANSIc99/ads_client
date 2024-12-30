@@ -1,6 +1,6 @@
 use bytes::{Bytes, BytesMut};
+use log::info;
 use crate::{Client, AdsCommand, AdsError, AdsErrorCode, HEADER_SIZE, LEN_DEL_DEV_NOT, Result, misc::HandleData};
-use log::{trace, debug, info, warn, error};
 
 impl Client {
 
@@ -41,6 +41,8 @@ impl Client {
         // Prepare delete device notification request
         let invoke_id = self.create_invoke_id();
         let _del_not_req = self.pre_delete_device_notification(handle, invoke_id);
+
+        info!("Submit Delete Notification Request: Invoke ID: {}", invoke_id);
 
         // Create handle for request
         self.register_command_handle(invoke_id, AdsCommand::DeleteDeviceNotification);

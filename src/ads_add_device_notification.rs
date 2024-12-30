@@ -1,5 +1,6 @@
 use std::sync::{Arc, Mutex};
 use bytes::{Bytes, BytesMut};
+use log::info;
 use crate::{Client, AdsCommand, AdsError, AdsErrorCode, Notification, AdsNotificationAttrib, HEADER_SIZE, LEN_ADD_DEV_NOT, Result, misc::HandleData};
 
 impl Client {
@@ -52,6 +53,7 @@ impl Client {
         let invoke_id = self.create_invoke_id();
         let _add_not_req = self.pre_add_dev_not(idx_grp, idx_offs, attributes, invoke_id);
 
+        info!("Submit Add Notification Request: Invoke ID: {}", invoke_id);
         // Create handle for request
         self.register_command_handle(invoke_id, AdsCommand::AddDeviceNotification);
 
