@@ -36,12 +36,12 @@ impl Client {
     /// # Example
     ///
     /// ```rust 
-    ///use ads_client::{Client, AdsTimeout, Result};
+    ///use ads_client::{ClientBuilder, Result};
     ///
     ///#[tokio::main]
     ///async fn main() -> Result<()> {
     ///
-    ///    let ads_client = Client::new("5.80.201.232.1.1", 10000, AdsTimeout::DefaultTimeout).await?;
+    ///    let ads_client = ClientBuilder::new("5.80.201.232.1.1", 10000).build().await?;
     ///    
     ///    match ads_client.read_device_info().await {
     ///        Ok(device_info) => {

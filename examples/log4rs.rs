@@ -1,14 +1,14 @@
-use ads_client::{Client, AdsTimeout, Result, AdsNotificationAttrib, AdsTransMode};
+use ads_client::{ClientBuilder, Client, Result, AdsNotificationAttrib, AdsTransMode};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 use bytes::{Bytes, BytesMut, BufMut};
-use log::{trace, info, warn, error};
+use log::*;
 use log4rs::filter::threshold::ThresholdFilter;
 use log4rs::append::console::ConsoleAppender;
 use log4rs::append::file::FileAppender;
 use log4rs::encode::pattern::PatternEncoder;
-use log4rs::config::{Appender, Config, Logger, Root};
+use log4rs::config::{Appender, Config, Root};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -49,7 +49,7 @@ async fn main() -> Result<()> {
 
     let _handle = log4rs::init_config(config).unwrap();
 
-    let ads_client = Client::new("172.17.56.160.1.1", 851, AdsTimeout::DefaultTimeout).await?;
+    let ads_client = ClientBuilder::new("172.17.56.160.1.1", 851).build().await?;
 
     read_symbol_inf(&ads_client).await;
     //device_notofication(&ads_client).await;
@@ -58,14 +58,14 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-async fn read_state(ads_client: &Client){
+async fn _read_state(ads_client: &Client){
     match ads_client.read_state().await {
         Ok(state) => println!("State: {:?}", state),
         Err(err) => println!("Error: {}", err.to_string())
     }
 }
 
-async fn device_notofication(ads_client: &Client){
+async fn _device_notofication(ads_client: &Client){
     // Get symbol handle
     let mut var_hdl_a : [u8; 4] = [0; 4];
     let mut var_hdl_b : [u8; 4] = [0; 4];
@@ -127,7 +127,7 @@ async fn device_notofication(ads_client: &Client){
                                                     var_hdl_a,
                                                     &ads_notification_attrib_a,
                                                     &mut not_hdl_a,
-                                                    notification_a,
+                                                    _notification_a,
                                                     Some(&buf_n_cnt_a)).await
         {
             Ok(_)     => {
@@ -152,7 +152,7 @@ async fn device_notofication(ads_client: &Client){
                                                     var_hdl_b,
                                                     &ads_notification_attrib_b,
                                                     &mut not_hdl_b,
-                                                    notification_b,
+                                                    _notification_b,
                                                     Some(&buf_n_cnt_b)).await
         {
             Ok(_)     => {
@@ -175,7 +175,7 @@ async fn device_notofication(ads_client: &Client){
                                                     var_hdl_c,
                                                     &ads_notification_attrib_c,
                                                     &mut not_hdl_c,
-                                                    notification_c,
+                                                    _notification_c,
                                                     Some(&buf_n_cnt_c)).await
         {
             Ok(_)     => {
@@ -237,7 +237,7 @@ async fn device_notofication(ads_client: &Client){
 }
 
 
-fn notification_a(_handle: u32, _timestamp: u64, payload: Bytes, user_data: Option<Arc<Mutex<BytesMut>>>){
+fn _notification_a(_handle: u32, _timestamp: u64, payload: Bytes, user_data: Option<Arc<Mutex<BytesMut>>>){
     let n_cnt_a = u16::from_ne_bytes(payload[..].try_into().expect("Failed to parse data"));
     println!("Notification Event!, n_cnt_a: {}", n_cnt_a);
 
@@ -253,7 +253,7 @@ fn notification_a(_handle: u32, _timestamp: u64, payload: Bytes, user_data: Opti
     }
 }
 
-fn notification_b(_handle: u32, _timestamp: u64, payload: Bytes, user_data: Option<Arc<Mutex<BytesMut>>>){
+fn _notification_b(_handle: u32, _timestamp: u64, payload: Bytes, user_data: Option<Arc<Mutex<BytesMut>>>){
     let n_cnt_b = u16::from_ne_bytes(payload[..].try_into().expect("failed to parse data"));
     println!("Notification Event!, n_cnt_b: {}", n_cnt_b);
 
@@ -269,7 +269,7 @@ fn notification_b(_handle: u32, _timestamp: u64, payload: Bytes, user_data: Opti
     }
 }
 
-fn notification_c(_handle: u32, _timestamp: u64, payload: Bytes, user_data: Option<Arc<Mutex<BytesMut>>>){
+fn _notification_c(_handle: u32, _timestamp: u64, payload: Bytes, user_data: Option<Arc<Mutex<BytesMut>>>){
     let n_cnt_c = u16::from_ne_bytes(payload[..].try_into().expect("failed to parse data"));
     if n_cnt_c % 100 == 0 {
         println!("Notification Event!, n_cnt_c: {}", n_cnt_c);

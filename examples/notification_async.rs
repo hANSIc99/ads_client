@@ -1,4 +1,4 @@
-use ads_client::{Client, AdsTimeout, Result, AdsNotificationAttrib, AdsTransMode};
+use ads_client::{ClientBuilder, Result, AdsNotificationAttrib, AdsTransMode};
 use std::thread;
 use std::time::Duration;
 use std::sync::{Arc, Mutex};
@@ -6,7 +6,7 @@ use bytes::{Bytes, BytesMut, BufMut};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let ads_client =  Client::new("5.80.201.232.1.1", 851, AdsTimeout::DefaultTimeout).await?;
+    let ads_client =  ClientBuilder::new("5.80.201.232.1.1", 851).build().await?;
 
     // Get symbol handle
     let mut var_hdl_a : [u8; 4] = [0; 4];
