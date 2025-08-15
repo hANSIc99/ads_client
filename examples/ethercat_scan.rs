@@ -1,6 +1,5 @@
 
-use std::fmt;
-use ads_client::{Client, AdsTimeout, Result};
+use ads_client::{ClientBuilder, Result};
 
 type EtherCATSlaveState = std::result::Result<EcState, EcSlaveError>;
 
@@ -124,9 +123,9 @@ impl EtherCATSlave {
     //pub fn new(value: [u8; 2] ) -> Self {
     pub async fn new(addr :&str) -> Result<Self> {
         
-        let ads_client = Client::new(addr, 0xFFFF, AdsTimeout::DefaultTimeout).await?;
+        let ads_client = ClientBuilder::new(addr, 0xFFFF).build().await?;
         let mut ec_state_raw : [u8; 2] = [0; 2];
-        let rd_result = ads_client.read(0x00000009, 1002, &mut ec_state_raw).await?;
+        let _rd_result = ads_client.read(0x00000009, 1002, &mut ec_state_raw).await?;
 
         // println!("value[0] : {:?}", value[0]); // 0x00
         // println!("value[1] : {:?}", value[1]); // 0x08
@@ -167,7 +166,6 @@ async fn main() -> Result<()> {
 
     let ec_slave = EtherCATSlave::new("5.80.201.232.2.1").await?;
     println!("ec_slave : {:?}", ec_slave.state); // 0x08
-    let x = 3;
 
     Ok(())
 }
@@ -183,7 +181,7 @@ async fn main() -> Result<()> {
 
 // fn main() -> Result<()>{
 //     let rt = Runtime::new().unwrap();
-//     let ads_client = rt.block_on(Client::new("5.80.201.232.1.1", 10000, AdsTimeout::DefaultTimeout)).unwrap();
+//     let ads_client = rt.block_on(ClientBuilder::new("5.80.201.232.1.1", 10000).build()).unwrap();
 
 //     let ads_state = rt.block_on(ads_client.read_state())?;
 //     //println!("State: {:?}", ads_client.read_state().unwrap());

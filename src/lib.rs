@@ -38,7 +38,7 @@ mod ads_delete_device_notification;
 mod ads_write_control;
 mod ads_read_device_info;
 
-use std::time::Instant;
+use std::time::{Instant, Duration};
 use std::io;
 use std::net::SocketAddr;
 use std::mem::size_of_val;
@@ -47,6 +47,7 @@ use tokio::net::TcpStream;
 use tokio::{runtime, stream};
 use tokio::io::{ReadHalf, WriteHalf};
 use tokio::io::{AsyncWriteExt, AsyncReadExt};
+use tokio::time::sleep;
 use log::{trace, debug, info, warn, error};
 use bytes::{Bytes, BytesMut};
 
@@ -73,6 +74,34 @@ const LEN_WR_CTRL_MIN       : usize = 8;
 enum ProcessStateMachine{
     ReadHeader,
     ReadPayload { len_payload: usize, err_code: u32, invoke_id: u32, cmd: AdsCommand}
+}
+
+#[derive(Debug)]
+pub struct ClientBuilder<'a> {
+    addr: &'a str,
+    port: u16,
+    timeout: AdsTimeout,
+    retry_delay: Option<Duration>,
+}
+
+impl<'a> ClientBuilder<'a> {
+    pub fn new(addr: &'a str, port: u16) -> Self {
+        Self { addr, port, timeout: AdsTimeout::DefaultTimeout, retry_delay: None }
+    }
+
+    pub fn set_timeout(mut self, timeout: AdsTimeout) -> Self {
+        self.timeout = timeout;
+        self
+    }
+
+    pub fn set_retry_delay(mut self, retry_delay: Option<Duration>) -> Self {
+        self.retry_delay = retry_delay;
+        self
+    }
+
+    pub async fn build(self) -> Result<Client> {
+        Client::new(self.addr, self.port, self.timeout, self.retry_delay).await
+    }
 }
 
 /// An ADS client to use in combination with the [TC1000 ADS router](https://www.beckhoff.com/en-en/products/automation/twincat/tc1xxx-twincat-3-base/tc1000.html).
@@ -157,7 +186,7 @@ impl Client {
         Ok(stream)
     } 
 
-    async fn process_response(handles: Arc<Mutex<Vec<Handle>>>, not_handles: Arc<Mutex<Vec<NotHandle>>>, mut rd_stream : ReadHalf<TcpStream>) {
+    async fn process_response(handles: Arc<Mutex<Vec<Handle>>>, not_handles: Arc<Mutex<Vec<NotHandle>>>, mut rd_stream : ReadHalf<TcpStream>, retry_delay: Option<Duration>) {
         
         let mut state = ProcessStateMachine::ReadHeader;
         let rt = runtime::Handle::current();
@@ -201,6 +230,9 @@ impl Client {
                         Err(e) => {
                             error!("Socket Error (0x1): {:?}", e);
                             //panic!("Socket Error (0x1): {:?}", e);
+                            if let Some(ref delay) = retry_delay {
+                                sleep(*delay).await;
+                            }
                         }
                     }
                 }
@@ -241,6 +273,9 @@ impl Client {
                         Err(e) => {
                             error!("ADS command {:?}, Invoke ID: {:?}: - Error occurred: {:?}", cmd, invoke_id, e);
                             //panic!("Socket Error (0x1): {:?}", e);
+                            if let Some(ref delay) = retry_delay {
+                                sleep(*delay).await;
+                            }
                         }
                     } // match
                 }
@@ -275,14 +310,14 @@ impl Client {
     /// 
     /// # Example
     /// ```rust
-    /// use ads_client::{Client, AdsTimeout, Result};
+    /// use ads_client::{ClientBuilder, Result};
     /// #[tokio::main]
     /// async fn main() -> Result<()> {
-    ///     let ads_client =  Client::new("5.80.201.232.1.1", 851, AdsTimeout::DefaultTimeout).await?;
+    ///     let ads_client =  ClientBuilder::new("5.80.201.232.1.1", 851).build().await?;
     ///     Ok(())
     /// }
     /// ```
-    pub async fn new(addr :&str, port : u16, timeout : AdsTimeout) -> Result<Self> {
+    async fn new(addr : &str, port : u16, timeout : AdsTimeout, retry_delay: Option<Duration>) -> Result<Self> {
         let state_flag : u16 = 4;
         let error_code : u32 = 0;
         let mut b_vec = Vec::<u8>::new();
@@ -322,7 +357,7 @@ impl Client {
         // Process incoming ADS responses
         let response_vector_a  = Arc::clone(&a_handles);
         let not_response_vector_a = Arc::clone(&a_not_handles);
-        hdl_rt.spawn(Client::process_response(response_vector_a, not_response_vector_a, read));
+        hdl_rt.spawn(Client::process_response(response_vector_a, not_response_vector_a, read, retry_delay));
 
         // Instantiate and spawn the CommandCleanter
         let response_vector_b = Arc::clone(&a_handles);
