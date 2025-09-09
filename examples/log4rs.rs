@@ -49,7 +49,7 @@ async fn main() -> Result<()> {
 
     let _handle = log4rs::init_config(config).unwrap();
 
-    let ads_client = ClientBuilder::new("172.17.56.160.1.1", 851).build().await?;
+    let ads_client = ClientBuilder::new("5.80.201.232.1.1", 851).build().await?;
 
     read_symbol_inf(&ads_client).await;
     //device_notofication(&ads_client).await;
