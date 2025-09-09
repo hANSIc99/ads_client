@@ -39,11 +39,11 @@ impl Client {
     /// # Example
     /// 
     /// ```rust
-    ///use ads_client::{Client, AdsTimeout, Result};
+    ///use ads_client::{ClientBuilder, Result};
     ///
     ///#[tokio::main]
     ///async fn main() -> Result<()> {
-    ///    let ads_client = Client::new("5.80.201.232.1.1", 851, AdsTimeout::DefaultTimeout).await?;
+    ///    let ads_client = ClientBuilder::new("5.80.201.232.1.1", 851).build().await?;
     ///
     ///    // Get symbol handle
     ///    let mut hdl : [u8; 4] = [0; 4];

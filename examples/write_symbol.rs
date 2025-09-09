@@ -1,9 +1,9 @@
-use ads_client::{Client, AdsTimeout};
+use ads_client::ClientBuilder;
 use tokio::runtime::Runtime;
 
 fn main() {
     let rt = Runtime::new().unwrap();
-    let ads_client = rt.block_on(Client::new("5.80.201.232.1.1", 851, AdsTimeout::DefaultTimeout)).unwrap();
+    let ads_client = rt.block_on(ClientBuilder::new("5.80.201.232.1.1", 851).build()).unwrap();
 
     // Get symbol handle
     let mut hdl : [u8; 4] = [0; 4];

@@ -1,10 +1,10 @@
 use std::{thread, time::Duration};
-use ads_client::{Client, AdsTimeout, StateInfo, AdsState, Result};
+use ads_client::{ClientBuilder, StateInfo, AdsState, Result};
 
 #[tokio::main]
 async fn main() -> Result<()> {
 
-    let ads_client = Client::new("5.80.201.232.1.1", 10000, AdsTimeout::DefaultTimeout).await?;
+    let ads_client = ClientBuilder::new("5.80.201.232.1.1", 10000).build().await?;
 
     // Set target system to config mode
     let new_state_config = StateInfo {ads_state : AdsState::Reconfig, device_state : 0 };

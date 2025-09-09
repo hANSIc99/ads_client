@@ -1,10 +1,10 @@
 use std::{thread, time::Duration};
-use ads_client::{Client, AdsTimeout, StateInfo, AdsState};
+use ads_client::{ClientBuilder, StateInfo, AdsState};
 use tokio::runtime::Runtime;
 
 fn main() {
     let rt = Runtime::new().unwrap();
-    let ads_client = rt.block_on(Client::new("5.80.201.232.1.1", 10000, AdsTimeout::DefaultTimeout)).unwrap();
+    let ads_client = rt.block_on(ClientBuilder::new("5.80.201.232.1.1", 10000, ).build()).unwrap();
 
     // Set target system to config mode
     let new_state_config = StateInfo {ads_state : AdsState::Reconfig, device_state : 0 };

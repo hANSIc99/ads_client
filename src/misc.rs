@@ -184,6 +184,7 @@ pub struct NotHandle {
 /// 
 /// - [AdsTimeout::DefaultTimeout] Corresponds to 5 seconds.
 /// - [AdsTimeout::CustomTimeout] Value in seconds.
+#[derive(Debug)]
 pub enum AdsTimeout {
     DefaultTimeout,
     CustomTimeout(u64)

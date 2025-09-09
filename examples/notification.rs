@@ -1,4 +1,4 @@
-use ads_client::{Client, AdsTimeout, AdsNotificationAttrib, AdsTransMode};
+use ads_client::{ClientBuilder, AdsNotificationAttrib, AdsTransMode};
 use std::thread;
 use std::time::Duration;
 use std::sync::{Arc, Mutex};
@@ -7,7 +7,7 @@ use tokio::runtime::Runtime;
 
 fn main() {
     let rt = Runtime::new().unwrap();
-    let ads_client = rt.block_on(Client::new("5.80.201.232.1.1", 851, AdsTimeout::DefaultTimeout)).unwrap();
+    let ads_client = rt.block_on(ClientBuilder::new("5.80.201.232.1.1", 851).build()).unwrap();
 
     // Get symbol handle
     let mut var_hdl_a : [u8; 4] = [0; 4];
